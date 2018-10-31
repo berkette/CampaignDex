@@ -6,3 +6,4 @@ This is a general tool to help world-building table top dungeon masters keep tra
 ##Dependencies
 Python 3.6
 Mako
+SQLAlchemy
