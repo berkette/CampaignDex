@@ -2,28 +2,28 @@ from mako.template import Template
 
 paths = {
     '/': {
-        'filename': 'home.html',
+        'filename': 'home.template',
         'content_additions': {}
     },
     '/bye': {
-        'filename': 'test.mako',
+        'filename': 'test.template',
         'content_additions': {'content': "Goodbye World..."}
     }
 }
 
 # Need to make this more sophisticated
 
-def getPageData(path):
+def get_page_data(path):
     # server.py calls this method, so don't change the name. Should
     # return a dictionary with keys 'status' (int) and 'content' (string)
     if path in paths:
         opts = paths[path]
-        return buildPageData(opts['filename'], opts['content_additions'])
+        return build_page_data(opts['filename'], opts['content_additions'])
     else:
         return {'status': 404, 'content': '404 - Page Not Found'}
 
 
-def buildPageData(filename, content_additions={}):
+def build_page_data(filename, content_additions={}):
     status = 200
     filepath = 'views/' + filename
     try:

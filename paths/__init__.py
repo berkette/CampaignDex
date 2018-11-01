@@ -1,1 +1,1 @@
-from .main import getPageData
+from paths.page_data import get_page_data
