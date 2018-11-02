@@ -1,6 +1,8 @@
 <html>
 <body>
-<h1>This is a Test</h1>
-<p>${attributes['content']}</p>
+<form action="/what" method="post">
+    <input type="text" name="your_input" value="Input">
+    <input type="submit" value="Submit">
+</form>
 </body>
 </html>

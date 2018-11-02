@@ -1,36 +1,26 @@
 from mako.template import Template
-
-paths = {
-    '/': {
-        'filename': 'home.template',
-        'content_additions': {}
-    },
-    '/bye': {
-        'filename': 'test.template',
-        'content_additions': {'content': "Goodbye World..."}
-    }
-}
+from db import query_page
+from db.exc import PageNotFoundError
+from db.models import Page
+from settings import DB_DIR
 
 # Need to make this more sophisticated
 
 def get_page_data(path):
     # server.py calls this method, so don't change the name. Should
     # return a dictionary with keys 'status' (int) and 'content' (string)
-    if path in paths:
-        opts = paths[path]
-        return build_page_data(opts['filename'], opts['content_additions'])
-    else:
-        return {'status': 404, 'content': '404 - Page Not Found'}
 
-
-def build_page_data(filename, content_additions={}):
-    status = 200
-    filepath = 'views/' + filename
     try:
-        template = Template(filename=filepath)
-        content = template.render(attributes=content_additions)
+        page = query_page(DB_DIR + 'test.db', path)
+    except PageNotFoundError:
+        page = Page.page_not_found(path)
+
+    template_path = 'views/' + page.template
+    try:
+        template = Template(filename=template_path)
+        content = template.render(attributes=page.get_content())
     except FileNotFoundError:
         status = 500
-        content = 'FileNotFoundError: Could not locate the template {}'.format(filepath)
-    return {'status': status, 'content': content}
+        content = 'FileNotFoundError: Could not locate the template {}'.format(template_path)
 
+    return {'status': page.status, 'content': content}

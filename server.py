@@ -1,6 +1,7 @@
 import time
+import cgi
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from paths import getPageData
+from paths import get_page_data, save_page
 
 HOST_NAME = 'localhost'
 PORT_NUMBER = 9000
@@ -10,27 +11,37 @@ PORT_NUMBER = 9000
 
 class MyHandler(BaseHTTPRequestHandler):
     def do_HEAD(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
+        self._set_headers(200, 'text/html')
 
     def do_POST(self):
-        return
+        form = cgi.FieldStorage(
+            fp = self.rfile,
+            headers = self.headers,
+            environ = {
+                'REQUEST_METHOD': 'POST',
+                'CONTENT_TYPE': self.headers['Content-Type']
+            }
+        )
+
+        if self.path == '/save_page':
+            save_page(form)
+
+        self._set_headers(200, 'text/html')
 
     def do_GET(self):
-        self.respond('text/html')
+        self._respond('text/html')
 
-    def handle_http(self, content_type):
-        page_data = getPageData(self.path)
+    def _respond(self, content_type):
+        page_data = get_page_data(self.path)
+        self._set_headers(page_data['status'], content_type)
+        response = bytes(page_data['content'], 'UTF-8')
+        self.wfile.write(response)
 
-        self.send_response(page_data['status'])
+    def _set_headers(self, status=200, content_type='text/html'):
+        self.send_response(status)
         self.send_header('Content-type', content_type)
         self.end_headers()
-        return bytes(page_data['content'], 'UTF-8')
 
-    def respond(self, content_type):
-        response = self.handle_http(content_type)
-        self.wfile.write(response)
 
 if __name__ == '__main__':
     httpd = HTTPServer((HOST_NAME, PORT_NUMBER), MyHandler)

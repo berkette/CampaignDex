@@ -1,0 +1,6 @@
+<html>
+<body>
+<h1>${attributes['title']}</h1>
+<p>${attributes['body']}</p>
+</body>
+</html>

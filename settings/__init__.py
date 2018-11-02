@@ -1,1 +1,1 @@
-from settings.constants import *
+from settings.constants import DB_DIR
