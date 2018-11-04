@@ -1,1 +1,5 @@
+CAMPAIGN_DB = 'campaigns.db'
+CAMPAIGN_TABLE_NAME = 'campaigns'
 DB_DIR = 'data/db/'
+DB_PREFIX = 'sqlite:///'
+PAGE_TABLE_NAME = 'pages'

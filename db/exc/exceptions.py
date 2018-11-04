@@ -1,3 +1,19 @@
+class CampaignNotFoundError(Exception):
+    def __init__(self, id):
+        message = 'No campaign was found with id {}'.format(id)
+        super().__init__(message)
+
+class DuplicateQuicklinkError(Exception):
+    def __init__(self, quicklink):
+        message = '{} is already a quicklink'.format(quicklink)
+        super().__init__(message)
+        self.errors = {'quicklink': quicklink}
+
+class NameUnavailableError(Exception):
+    def __init__(self, name):
+        message = 'A campaign already exists with name {}'.format(name)
+        super().__init__(message)
+
 class PageNotFoundError(Exception):
     def __init__(self, page_path):
         message = 'No page was found at path {}'.format(page_path)
@@ -6,4 +22,9 @@ class PageNotFoundError(Exception):
 class PathUnavailableError(Exception):
     def __init__(self, page_path):
         message = 'A page already exists at path {}'.format(page_path)
+        super().__init__(message)
+
+class QuicklinkNotFoundError(Exception):
+    def __init__(self, ql):
+        message = 'The quicklink {} does not exist'.format(ql)
         super().__init__(message)

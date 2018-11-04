@@ -1,8 +1,9 @@
 from sqlalchemy import Column, Integer, String, Text
 from db.models.base import Base
+from settings import PAGE_TABLE_NAME
 
 class Page(Base):
-    __tablename__ = 'pages'
+    __tablename__ = PAGE_TABLE_NAME
 
     id = Column(Integer, primary_key=True)
     path = Column('path', String(250), unique=True, nullable=False)
@@ -11,12 +12,14 @@ class Page(Base):
     status = Column('status', Integer)
     template = Column('template', String(250))
 
-    def __init__(self, path, title, *, body='', status=200, template='page.template'):
-        self.path = path
-        self.title = title
-        self.body = body
-        self.status = status
-        self.template = template
+    def new(path, title, *, body='', status=200, template='page.template'):
+        page = Page()
+        page.path = path
+        page.title = title
+        page.body = body
+        page.status = status
+        page.template = template
+        return page
 
     def get_content(self):
         return {'title': self.title, 'body': self.body}

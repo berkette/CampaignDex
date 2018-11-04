@@ -12,6 +12,6 @@ def save_page(form):
         body = ''
 
     try:
-        insert_page(DB_DIR + '/test.db', path, title, body=body)
+        insert_page('test.db', path, title, body=body)
     except PathUnavailableError:
         print("Can't save the page")
