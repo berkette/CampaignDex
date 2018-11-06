@@ -1,8 +1,0 @@
-<html>
-<body>
-<form action="/what" method="post">
-    <input type="text" name="your_input" value="Input">
-    <input type="submit" value="Submit">
-</form>
-</body>
-</html>
