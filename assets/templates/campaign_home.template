@@ -1,0 +1,18 @@
+<%inherit file="campaign_base.template"/>
+
+<%block name="header">
+    Welcome to CampaignDex
+</%block>
+
+<%block name="body">
+    <div id="new_campaign">
+        Start a New Campaign
+    </div>
+    <div id="campaign_list">
+        % for campaign in attributes['campaigns']:
+            <div class="campaign" id="campaign_${campaign.id}">${campaign.name}</div>
+        % endfor
+        <div id="open_campaign">Open</div>
+        <div id="manage_campaign">Manage</div>
+    </div>
+</%block>

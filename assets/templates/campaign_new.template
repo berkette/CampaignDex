@@ -1,0 +1,31 @@
+<%inherit file="campaign_base.template">
+
+<%block name="header">
+    Start a Campaign
+</%block>
+
+<%block name="body">
+    ##TODO
+
+
+<html>
+<body>
+<h1>Create a New Campaign</h1>
+
+% if 'error' in attributes:
+    <div id='errors'>
+        <p>${attributes['error']}</p>
+    </div>
+% endif
+
+<form action='save_campaign' method='post'>
+    <label for='name'>Campaign Name</label>
+    <input type='text' name='name' value='New Campaign Title'>
+    <label for='skin'>Choose a skin</label>
+    <select name='skin'>
+        <option value='default'>Default</option>
+    </select>
+    <input type='submit' value='Create'>
+</form>
+</body>
+</html>

@@ -1,4 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
 from db.models.base import Base
 from settings import PAGE_TABLE_NAME
 
@@ -10,14 +12,20 @@ class Page(Base):
     title = Column('title', String(250))
     body = Column('body', Text)
     status = Column('status', Integer)
+    superpage_path = Column('superpage_path', Integer,\
+        ForeignKey(PAGE_TABLE_NAME + '.path'))
     template = Column('template', String(250))
 
-    def new(path, title, *, body='', status=200, template='page.template'):
+    superpage = relationship('Page', backref='subpages', remote_side=[path])
+
+    def new(path, title='Untitled', *, body='', status=200,\
+        superpage_path=None, template='page'):
         page = Page()
         page.path = path
         page.title = title
         page.body = body
         page.status = status
+        page.superpage_path = superpage_path
         page.template = template
         return page
 
@@ -34,11 +42,15 @@ class Page(Base):
             self.body = kwargs['body']
         if 'status' in kwargs:
             self.status = kwargs['status']
+        if 'superpage_path' in kwargs:
+            self.superpage_path = kwargs['superpage_path']
         if 'template' in kwargs:
             self.template = kwargs['template']
 
+    ### Class Methods ###
+
     def page_not_found(path):
-        page = Page(
+        page = Page.new(
             path, 
             'Page Not Found',
             body="The page you are looking for doesn't exist. Sorry!",

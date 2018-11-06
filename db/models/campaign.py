@@ -44,6 +44,9 @@ class Campaign(Base):
     def get_options(self):
         return json.loads(self.options)
 
+    def get_skin(self):
+        return self.get_options()['skin']
+
     def remove_quicklink(self, path, title):
         opts = self.get_options()
         ql = Campaign.format_quicklink(path, title)

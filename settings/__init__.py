@@ -1,3 +1,2 @@
-from settings.constants import CAMPAIGN_DB, CAMPAIGN_TABLE_NAME, DB_DIR
-from settings.constants import DB_PREFIX, PAGE_TABLE_NAME
-
+from settings.root_dir import ROOT_DIR
+from settings.constants import * 

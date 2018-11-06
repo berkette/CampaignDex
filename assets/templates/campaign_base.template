@@ -1,0 +1,10 @@
+<html>
+<body>
+    <div id="header">
+        <%block name="header"/>
+    </div>
+    <div id="body">
+        <%block name="body"/>
+    </div>
+</body>
+</html>
