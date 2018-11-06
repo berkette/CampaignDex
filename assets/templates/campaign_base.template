@@ -1,4 +1,7 @@
 <html>
+<head>
+<%block name="head"/>
+</head>
 <body>
     <div id="header">
         <%block name="header"/>

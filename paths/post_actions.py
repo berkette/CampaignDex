@@ -1,5 +1,6 @@
 import os
-from settings import CAMPAIGN_DB, PATH_NEW
+from settings import CAMPAIGN_DB, PATH_NEW, PATH_HOME
+from settings import HOME_TEMPLATE, NEW_TEMPLATE
 from db import insert_campaign, query_campaign
 from db import insert_page
 from db.exc import CampaignNotFoundError, NameUnavailableError
@@ -93,7 +94,7 @@ def save_page(db_name, form):
 
 ### Private ###
 
-def _create_superpage(db_name, path)
+def _create_superpage(db_name, path):
     superpage_path = os.path.dirname(path)
     if path is not superpage_path:
         try:
