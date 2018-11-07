@@ -4,13 +4,22 @@ from settings import HOME_TEMPLATE, NEW_TEMPLATE
 from settings import GETVAR_CAMPAIGN_NOT_FOUND, GETVAR_INVALID_NAME
 from settings import GETVAR_NAME_UNAVAILABLE, GETVAR_PATH_UNAVAILABLE
 from settings import GETVAR_SAVE_SUCCESS
-from db import insert_campaign, query_campaign, update_campaign
+from db import delete_campaign, insert_campaign, query_campaign, update_campaign
 from db import insert_page
 from db.exc import CampaignNotFoundError, InvalidNameError, NameUnavailableError
 from db.exc import PageNotFoundError, PathUnavailableError
 from db.models import Campaign
 
 ### Public ###
+
+def destroy_campaign(form):
+    campaign_id = form['campaign_id'].value
+    redirect_path = PATH_HOME
+    try:
+        delete_campaign(int(campaign_id))
+    except CampaignNotFoundError:
+        redirect_path = redirect_path + '?error=' + GETVAR_CAMPAIGN_NOT_FOUND
+    return redirect_path
 
 def open_campaign(form):
     campaign_id = form['campaign'].value

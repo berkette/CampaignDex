@@ -14,6 +14,7 @@ GETVAR_NAME_UNAVAILABLE = 'name_unavailable'
 GETVAR_PATH_UNAVAILABLE = 'path_unavailable'
 GETVAR_SAVE_SUCCESS = 'save_success'
 
+POST_DELETE_CAMPAIGN = '/delete_campaign'
 POST_OPEN_CAMPAIGN = '/open_campaign'
 POST_SAVE_CAMPAIGN = '/save_campaign'
 POST_UPDATE_CAMPAIGN = '/update_campaign'

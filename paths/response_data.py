@@ -3,14 +3,14 @@ from mako.lookup import TemplateLookup
 from db import all_campaigns, query_campaign, query_page
 from db.exc import PageNotFoundError
 from db.models import Campaign, Page
-from paths.post_actions import open_campaign, save_new_campaign
+from paths.post_actions import destroy_campaign, open_campaign, save_new_campaign
 from paths.post_actions import save_update_campaign, save_page
 from settings import PATH_HOME, PATH_MANAGE, PATH_NEW, PATH_NOT_FOUND
 from settings import GETVAR_CAMPAIGN_NOT_FOUND, GETVAR_INVALID_NAME
 from settings import GETVAR_NAME_UNAVAILABLE, GETVAR_PATH_UNAVAILABLE
 from settings import GETVAR_SAVE_SUCCESS
-from settings import POST_OPEN_CAMPAIGN, POST_SAVE_CAMPAIGN
-from settings import POST_UPDATE_CAMPAIGN
+from settings import POST_DELETE_CAMPAIGN, POST_OPEN_CAMPAIGN
+from settings import POST_SAVE_CAMPAIGN, POST_UPDATE_CAMPAIGN
 from settings import POST_SAVE_PAGE
 from settings import CAMPAIGN_DB, DB_DIR
 from settings import CAMPAIGN_BASE_TEMPLATE
@@ -72,8 +72,9 @@ def get_response_data(path, *, cookie=None, get_vars={}):
                 'campaign_name': campaign.name,
                 'campaign_skin': campaign.get_skin(),
                 'css_filepath': _build_css_path(SKIN_CAMPAIGN),
-                'js_filepath': _build_js_path(CAMPAIGN_MANAGE_TEMPLATE),
+                'delete_campaign': POST_DELETE_CAMPAIGN,
                 'home_path': PATH_HOME,
+                'js_filepath': _build_js_path(CAMPAIGN_MANAGE_TEMPLATE),
                 'update_campaign': POST_UPDATE_CAMPAIGN,
                 'skins': PAGE_SKINS
             }
@@ -126,7 +127,10 @@ def get_response_data(path, *, cookie=None, get_vars={}):
 def post_action(path, form, cookie=None):
     set_cookie = []
 
-    if path == POST_OPEN_CAMPAIGN:
+    if path == POST_DELETE_CAMPAIGN:
+        redirect_path = destroy_campaign(form)
+
+    elif path == POST_OPEN_CAMPAIGN:
         data = open_campaign(form)
         redirect_path = data['redirect_path']
         set_cookie.append((COOKIE_ID, data['id']))
