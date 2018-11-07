@@ -8,8 +8,15 @@ PATH_MANAGE = '/manage'
 PATH_NEW = '/new'
 PATH_NOT_FOUND = '/not_found'
 
+GETVAR_CAMPAIGN_NOT_FOUND = 'campaign_not_found'
+GETVAR_INVALID_NAME = 'invalid_name'
+GETVAR_NAME_UNAVAILABLE = 'name_unavailable'
+GETVAR_PATH_UNAVAILABLE = 'path_unavailable'
+GETVAR_SAVE_SUCCESS = 'save_success'
+
 POST_OPEN_CAMPAIGN = '/open_campaign'
 POST_SAVE_CAMPAIGN = '/save_campaign'
+POST_UPDATE_CAMPAIGN = '/update_campaign'
 POST_SAVE_PAGE = '/save_page'
 
 # Database files, paths, and directories
@@ -20,19 +27,20 @@ DB_PREFIX = 'sqlite:///'
 # Template files, paths, and directories
 CAMPAIGN_BASE_TEMPLATE = 'campaign_base'
 CAMPAIGN_HOME_TEMPLATE = 'campaign_home'
+CAMPAIGN_MANAGE_TEMPLATE = 'campaign_manage'
 CAMPAIGN_NEW_TEMPLATE = 'campaign_new'
 BASE_TEMPLATE = 'base'
 HOME_TEMPLATE = 'home'
 NEW_TEMPLATE = 'new'
 
-CSS_DIR = 'assets/css/'
-CSS_SUFFIX = '.css'
+CSS_DIR = 'css/'
+CSS_SUFFIX = '.css.mako'
 
-JS_DIR = 'assets/js/'
-JS_SUFFIX = '.js'
+JS_DIR = 'js/'
+JS_SUFFIX = '.js.mako'
 
 TEMPLATE_DIR = 'assets/templates/'
-TEMPLATE_SUFFIX = '.template'
+TEMPLATE_SUFFIX = '.html.mako'
 
 # Table names
 CAMPAIGN_TABLE_NAME = 'campaigns'
@@ -50,4 +58,7 @@ COOKIE_DB = 'CAMPAIGNDEX_DB'
 COOKIE_SKIN = 'CAMPAIGNDEX_SKIN'
 
 # Skins
+SKIN_CAMPAIGN = 'campaign'
 SKIN_DEFAULT = 'default'
+
+PAGE_SKINS = [SKIN_DEFAULT]

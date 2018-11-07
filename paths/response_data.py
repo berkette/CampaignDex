@@ -1,20 +1,29 @@
 from mako.template import Template
-from db import all_campaigns, query_page
+from mako.lookup import TemplateLookup
+from db import all_campaigns, query_campaign, query_page
 from db.exc import PageNotFoundError
 from db.models import Campaign, Page
-from paths.post_actions import open_campaign, save_campaign
-from paths.post_actions import save_page
+from paths.post_actions import open_campaign, save_new_campaign
+from paths.post_actions import save_update_campaign, save_page
 from settings import PATH_HOME, PATH_MANAGE, PATH_NEW, PATH_NOT_FOUND
-from settings import POST_OPEN_CAMPAIGN, POST_SAVE_CAMPAIGN, POST_SAVE_PAGE
+from settings import GETVAR_CAMPAIGN_NOT_FOUND, GETVAR_INVALID_NAME
+from settings import GETVAR_NAME_UNAVAILABLE, GETVAR_PATH_UNAVAILABLE
+from settings import GETVAR_SAVE_SUCCESS
+from settings import POST_OPEN_CAMPAIGN, POST_SAVE_CAMPAIGN
+from settings import POST_UPDATE_CAMPAIGN
+from settings import POST_SAVE_PAGE
 from settings import CAMPAIGN_DB, DB_DIR
-from settings import CAMPAIGN_BASE_TEMPLATE, CAMPAIGN_HOME_TEMPLATE, CAMPAIGN_NEW_TEMPLATE
+from settings import CAMPAIGN_BASE_TEMPLATE
+from settings import CAMPAIGN_HOME_TEMPLATE, CAMPAIGN_MANAGE_TEMPLATE
+from settings import CAMPAIGN_NEW_TEMPLATE
 from settings import BASE_TEMPLATE, HOME_TEMPLATE, NEW_TEMPLATE
 from settings import CSS_DIR, JS_DIR, ROOT_DIR, TEMPLATE_DIR
 from settings import CSS_SUFFIX, JS_SUFFIX, TEMPLATE_SUFFIX
 from settings import STATUS_OK, STATUS_NOT_FOUND
 from settings import STATUS_REDIRECT, STATUS_SERVER_ERR
 from settings import COOKIE_ID, COOKIE_DB, COOKIE_SKIN
-from settings import SKIN_DEFAULT
+from settings import SKIN_CAMPAIGN, SKIN_DEFAULT
+from settings import PAGE_SKINS
 
 ### Public ###
 
@@ -40,7 +49,7 @@ def get_response_data(path, *, cookie=None, get_vars={}):
 
         status = page.status
         attributes = page.get_content()
-        template_path = _build_template_path(page.template)
+        template_name = page.template
 
     else:
         # Means the user is looking at campaign selection/creation
@@ -48,46 +57,69 @@ def get_response_data(path, *, cookie=None, get_vars={}):
             status = STATUS_OK
             attributes = {
                 'campaigns': all_campaigns(),
-                'css_filepath': _build_css_path(CAMPAIGN_HOME_TEMPLATE),
+                'css_filepath': _build_css_path(SKIN_CAMPAIGN),
                 'js_filepath': _build_js_path(CAMPAIGN_HOME_TEMPLATE),
-                'new_path': PATH_NEW
+                'manage_path': PATH_MANAGE,
+                'new_path': PATH_NEW,
+                'open_campaign': POST_OPEN_CAMPAIGN
             }
-            template_path = _build_template_path(CAMPAIGN_HOME_TEMPLATE)
+            template_name = CAMPAIGN_HOME_TEMPLATE
         elif path == PATH_MANAGE:
-            campaign = query_campaign(get_vars['campaign_id'])
+            campaign = query_campaign(int(get_vars['campaign_id'][0]))
             status = STATUS_OK
             attributes = {
+                'campaign_id': campaign.id,
                 'campaign_name': campaign.name,
                 'campaign_skin': campaign.get_skin(),
-                'skins': [SKIN_DEFAULT]
+                'css_filepath': _build_css_path(SKIN_CAMPAIGN),
+                'js_filepath': _build_js_path(CAMPAIGN_MANAGE_TEMPLATE),
+                'home_path': PATH_HOME,
+                'update_campaign': POST_UPDATE_CAMPAIGN,
+                'skins': PAGE_SKINS
             }
+            template_name = CAMPAIGN_MANAGE_TEMPLATE
         elif path == PATH_NEW:
             status = STATUS_OK
             attributes = {
-                'skins': [SKIN_DEFAULT]
+                'home_path': PATH_HOME,
+                'css_filepath': _build_css_path(SKIN_CAMPAIGN),
+                'js_filepath': _build_js_path(CAMPAIGN_NEW_TEMPLATE),
+                'save_campaign': POST_SAVE_CAMPAIGN,
+                'skins': PAGE_SKINS
             }
-            template_path = _build_template_path(CAMPAIGN_NEW_TEMPLATE)
+            template_name = CAMPAIGN_NEW_TEMPLATE
         else:
             page = Page.page_not_found(path)
             status = page.status
             attributes = page.get_content()
-            template_path = _build_template_path(page.template)
+            template_name = page.template
 
     # Error messages to display after a POST
     if 'error' in get_vars:
         error = get_vars['error'][0]
-        if error == 'name_unavailable':
+        if error == GETVAR_CAMPAIGN_NOT_FOUND:
+            attributes['error'] = 'The campaign couldn\'t be found'
+        elif error == GETVAR_INVALID_NAME:
+            attributes['error'] = 'The campaign must have a name'
+        elif error == GETVAR_NAME_UNAVAILABLE:
             attributes['error'] = 'A campaign with this name already exists'
-        elif error == 'path_unavailable':
+        elif error == GETVAR_PATH_UNAVAILABLE:
             attributes['error'] = 'A page at this path already exists'
+
+    if 'message' in get_vars:
+        message = get_vars['message'][0]
+        if message == GETVAR_SAVE_SUCCESS:
+            attributes['message'] = 'Changes successfully saved'
 
     # Build the response content    
     try:
-        template = Template(filename=template_path)
+        template_lookup = TemplateLookup(directories=[_build_template_dir()])
+        template_filename = _build_template_filename(template_name)
+        template = template_lookup.get_template(template_filename)
         content = template.render(attributes=attributes)
     except FileNotFoundError:
         status = STATUS_SERVER_ERR
-        content = 'FileNotFoundError: Could not locate the template {}'.format(template_path)
+        content = 'FileNotFoundError: Could not locate the template {}'.format(template_name)
 
     return {'status': status, 'content': content}
 
@@ -95,21 +127,21 @@ def post_action(path, form, cookie=None):
     set_cookie = []
 
     if path == POST_OPEN_CAMPAIGN:
-        if form['campaign'].value == 'new':
-            redirect_path = PATH_NEW
-        else:
-            data = open_campaign(form)
-            redirect_path = data['redirect_path']
-            set_cookie.append((COOKIE_ID, data['id']))
-            set_cookie.append((COOKIE_DB, data['db']))
-            set_cookie.append((COOKIE_SKIN, data['skin']))
-            
-    elif path == POST_SAVE_CAMPAIGN:
-        data = save_campaign(form)
+        data = open_campaign(form)
         redirect_path = data['redirect_path']
         set_cookie.append((COOKIE_ID, data['id']))
         set_cookie.append((COOKIE_DB, data['db']))
         set_cookie.append((COOKIE_SKIN, data['skin']))
+            
+    elif path == POST_SAVE_CAMPAIGN:
+        data = save_new_campaign(form)
+        redirect_path = data['redirect_path']
+        set_cookie.append((COOKIE_ID, data['id']))
+        set_cookie.append((COOKIE_DB, data['db']))
+        set_cookie.append((COOKIE_SKIN, data['skin']))
+
+    elif path == POST_UPDATE_CAMPAIGN:
+        redirect_path = save_update_campaign(form)
 
     elif path == POST_SAVE_PAGE:
         if COOKIE_DB in cookie:
@@ -127,11 +159,14 @@ def post_action(path, form, cookie=None):
 ### Private ###
 
 def _build_css_path(template_name):
-    return ROOT_DIR + CSS_DIR + template_name + CSS_SUFFIX
+    return CSS_DIR + template_name + CSS_SUFFIX
 
 def _build_js_path(template_name):
-    return ROOT_DIR + JS_DIR + template_name + JS_SUFFIX
+    return JS_DIR + template_name + JS_SUFFIX
 
-def _build_template_path(template_name):
-    return ROOT_DIR + TEMPLATE_DIR + template_name + TEMPLATE_SUFFIX
+def _build_template_dir():
+    return ROOT_DIR + TEMPLATE_DIR
+
+def _build_template_filename(template_name):
+    return template_name + TEMPLATE_SUFFIX
 

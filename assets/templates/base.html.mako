@@ -14,7 +14,9 @@
         <div id="quicklinks">Quicklinks</div>
     </div>
     <div id="main_content">
-        <div id="title">${attributes['title']}</div>
+        <div id="title">
+            <h1>${attributes['title']}</h1>
+        </div>
         <%block name="main_content">
             <div id="edit_page">Edit</div>
             <div id="text_content">

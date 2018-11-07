@@ -1,3 +1,6 @@
+<%def name="insert()">
+<script type="text/javascript">
+
 var selected_campaign = '';
 var selected_div_id = '';
 
@@ -18,6 +21,12 @@ function open_campaign() {
 }
 
 function manage_campaign() {
-    document.getElementById("manage_hidden").value = selected_campaign;
-    document.getElementById("manage_form").submit();
+    window.location.href = '${attributes['manage_path']}?campaign_id=' + selected_campaign;
 }
+
+function new_campaign() {
+    window.location.href = '${attributes['new_path']}';
+}
+
+</script>
+</%def>

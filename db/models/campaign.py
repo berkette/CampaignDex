@@ -1,7 +1,8 @@
 import json
 import uuid
 from sqlalchemy import Column, Integer, String, Text
-from db.exc import DuplicateQuicklinkError, QuicklinkNotFoundError
+from db.exc import DuplicateQuicklinkError, InvalidNameError
+from db.exc import QuicklinkNotFoundError
 from db.models.base import Base
 from settings import CAMPAIGN_TABLE_NAME
 
@@ -25,7 +26,11 @@ class Campaign(Base):
             'quicklinks': quicklinks
         }
 
-        campaign.name = name
+        if Campaign.valid_name(name):
+            campaign.name = name
+        else:
+            raise InvalidNameError
+
         campaign.db_name = str(uuid.uuid4()) + '.db'
         campaign.options = json.dumps(options)
         return campaign
@@ -60,7 +65,10 @@ class Campaign(Base):
         self.options = json.dumps(opts)
     
     def update_name(self, name):
-        self.name = name
+        if Campaign.valid_name(name):
+            self.name = name
+        else:
+            raise InvalidNameError
 
     def update_skin(self, skin='default'):
         opts = self.get_options()
@@ -68,5 +76,12 @@ class Campaign(Base):
         self.options = json.dumps(opts)
 
     # Class Methods
+    def valid_name(name):
+        valid = True
+        if not name:
+            valid = False
+        return valid
+
     def format_quicklink(path, title):
         return {'path': path, 'title': title}
+

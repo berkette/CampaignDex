@@ -1,4 +1,4 @@
-<%inherit file="base.template">
+<%inherit file="base.html.mako"/>
 
 <%block name="main_content">
     <div id="new_page_form">

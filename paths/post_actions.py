@@ -1,36 +1,39 @@
 import os
-from settings import CAMPAIGN_DB, PATH_NEW, PATH_HOME
+from settings import CAMPAIGN_DB, PATH_NEW, PATH_HOME, PATH_MANAGE
 from settings import HOME_TEMPLATE, NEW_TEMPLATE
-from db import insert_campaign, query_campaign
+from settings import GETVAR_CAMPAIGN_NOT_FOUND, GETVAR_INVALID_NAME
+from settings import GETVAR_NAME_UNAVAILABLE, GETVAR_PATH_UNAVAILABLE
+from settings import GETVAR_SAVE_SUCCESS
+from db import insert_campaign, query_campaign, update_campaign
 from db import insert_page
-from db.exc import CampaignNotFoundError, NameUnavailableError
+from db.exc import CampaignNotFoundError, InvalidNameError, NameUnavailableError
 from db.exc import PageNotFoundError, PathUnavailableError
 from db.models import Campaign
 
 ### Public ###
 
 def open_campaign(form):
-    db_id = form['campaign'].value
+    campaign_id = form['campaign'].value
     try:
-        campaign = query_campaign(db_id)
+        campaign = query_campaign(campaign_id)
         redirect_path = PATH_HOME
         db_name = campaign.db_name
         db_skin = campaign.get_skin()
     except CampaignNotFoundError:
-        redirect_path = '?error=campaign_not_found'
+        redirect_path = '?error=' + GEVAR_CAMPAIGN_NOT_FOUND
         db_id = ''
         db_name = ''
         db_skin = ''
     
     data = {
         'redirect_path': redirect_path,
-        'id': str(db_id),
+        'id': str(campaign_id),
         'db': db_name,
         'skin': db_skin
     }
     return data
 
-def save_campaign(form):
+def save_new_campaign(form):
     name = form['name'].value
     skin = form['skin'].value
     try:
@@ -56,7 +59,7 @@ def save_campaign(form):
         db_name = campaign.db_name
         db_skin = campaign.get_skin()
     except NameUnavailableError:
-        redirect_path = PATH_NEW = '?error=name_unavailable'
+        redirect_path = PATH_NEW + '?error=' + GETVAR_NAME_UNAVAILABLE
         db_id = ''
         db_name = ''
         db_skin = ''
@@ -68,6 +71,23 @@ def save_campaign(form):
         'skin': db_skin
     }
     return data
+
+def save_update_campaign(form):
+    campaign_id = form['campaign_id'].value
+    name = form['name'].value
+    skin = form['skin'].value
+
+    redirect_path = PATH_HOME + '?message=' + GETVAR_SAVE_SUCCESS
+    try:
+        update_campaign(int(campaign_id), name=name, skin=skin)
+    except CampaignNotFoundError:
+        redirect_path = PATH_MANAGE + '?error=' + GETVAR_CAMPAIGN_NOT_FOUND
+    except InvalidNameError:
+        redirect_path = PATH_MANAGE + '?campaign_id=' + campaign_id + '&error=' + GETVAR_INVALID_NAME
+    except NameUnavailableError:
+        redirect_path = PATH_MANAGE + '?campaign_id=' + campaign_id + '&error=' + GETVAR_NAME_UNAVAILABLE
+    return redirect_path
+        
 
 def save_page(db_name, form):
     path = form['page_path'].value
@@ -87,7 +107,7 @@ def save_page(db_name, form):
         _create_superpage(db_name, path)
         redirect_path = path
     except PathUnavailableError:
-        redirect_path = PATH_NEW = '?error=path_unavailable'
+        redirect_path = PATH_NEW = '?error=' + GETVAR_PATH_UNAVAILABLE
 
     return redirect_path
 

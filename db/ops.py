@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-from db.exc import NameUnavailableError
+from db.exc import NameUnavailableError, UpdateUnspecifiedError
 from db.exc import PageNotFoundError, PathUnavailableError
 from db.models import Base, Campaign, Page
 from settings import CAMPAIGN_DB, DB_DIR, DB_PREFIX, PAGE_TABLE_NAME
@@ -35,7 +35,7 @@ def delete_campaign(id):
         _end_session(engine, session)
         raise CampaignNotFoundError(id)
     
-    db_to_del = campaign.db_name
+    db_to_del = ROOT_DIR + DB_DIR + campaign.db_name
     session.delete(campaign)
     session.flush()
 
@@ -86,7 +86,7 @@ def update_campaign(id, name=None, skin=None, add_quicklink=None,\
     remove_quicklink=None):
     # Must specify at least one change
     if not (name or skin or add_quicklink or remove_quicklink):
-        raise Exception('Did not specify what to update')
+        raise UpdateUnspecifiedError
 
     (engine, session) = _start_session(CAMPAIGN_DB)
    
