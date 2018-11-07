@@ -9,7 +9,8 @@
 
 <body>
     <div id="header">
-        <h1>Manage Campaign</h1>
+        <h1>CampaignDex</h1>
+        <h2>Manage</h2>
     </div>
     
     <div id="body">
@@ -20,9 +21,12 @@
 % endif
 
         <form id="campaign_form" action="${attributes['update_campaign']}" method="post">
-            <label for="name">Campaign Name</label>
-            <input type="text" name="name" value="${attributes['campaign_name']}"><br>
-            <label for="skin">Choose a skin</label>
+            <label for="name">Rename Campaign:</label>
+            <br>
+            <input type="text" name="name" value="${attributes['campaign_name']}">
+            <br><br>
+            <label for="skin">Change Skin:</label></td>
+            <br>
             <select name="skin">
 % for skin in attributes['skins']:
                 <option
@@ -31,10 +35,10 @@
                     selected="selected"
     % endif
                 >
-                ${skin}
+                    ${skin}
                 </option>
 % endfor
-            </select><br>
+            </select>
             <input type="hidden" name="campaign_id" value="${attributes['campaign_id']}">
         </form>
 

@@ -9,21 +9,25 @@
 
 <body>
     <div id="header">
-        <h1>Start a New Campaign</h1>
+        <h1>CampaignDex</h1>
+        <h2>New</h2>
     </div>
     
     <div id="body">
 % if 'error' in attributes:
-        <div id='errors'>
+        <div id="errors">
             <p style="color:red;">${attributes['error']}</p>
         </div>
 % endif
 
-        <form id="campaign_form" action='${attributes['save_campaign']}' method='post'>
-            <label for='name'>Campaign Name</label>
-            <input type='text' name='name' value='New Campaign'><br>
-            <label for='skin'>Choose a skin</label>
-            <select name='skin'>
+        <form id="campaign_form" action="${attributes['save_campaign']}" method="post">
+            <label for="name">Name Campaign:</label>
+            <br>
+            <input type="text" name="name" placeholder="New Name" value="${attributes['name']}">
+            <br><br>
+            <label for="skin">Choose a Skin:</label>
+            <br>
+            <select name="skin">
 % for skin in attributes['skins']:
                 <option value="${skin}">${skin}</option>
 % endfor

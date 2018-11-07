@@ -80,11 +80,16 @@ def get_response_data(path, *, cookie=None, get_vars={}):
             }
             template_name = CAMPAIGN_MANAGE_TEMPLATE
         elif path == PATH_NEW:
+            if 'name' in get_vars:
+                get_var_name = get_vars['name'][0]
+            else:
+                get_var_name = ''
             status = STATUS_OK
             attributes = {
                 'home_path': PATH_HOME,
                 'css_filepath': _build_css_path(SKIN_CAMPAIGN),
                 'js_filepath': _build_js_path(CAMPAIGN_NEW_TEMPLATE),
+                'name': get_var_name,
                 'save_campaign': POST_SAVE_CAMPAIGN,
                 'skins': PAGE_SKINS
             }
