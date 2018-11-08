@@ -1,5 +1,5 @@
 __pycache__
-data/db/*
-data/rtf/*
+data/db/*.db
+data/rtf/*.rtf
 .DS_Store
 *.swp
