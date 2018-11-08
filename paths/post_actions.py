@@ -1,7 +1,8 @@
 import os
-from settings import CAMPAIGN_DB, PATH_NEW, PATH_HOME, PATH_MANAGE
+from settings import CAMPAIGN_DB, PATH_NEW, PATH_HOME, PATH_MANAGE, PATH_ROOT
 from settings import HOME_TEMPLATE, NEW_TEMPLATE
-from settings import GETVAR_CAMPAIGN_NOT_FOUND, GETVAR_INVALID_NAME
+from settings import GETVAR_CAMPAIGN_NOT_FOUND
+from settings import GETVAR_INVALID_PATH, GETVAR_INVALID_NAME
 from settings import GETVAR_NAME_UNAVAILABLE, GETVAR_PATH_UNAVAILABLE
 from settings import GETVAR_SAVE_SUCCESS
 from settings import GETVAR_INVALID_TITLE
@@ -9,13 +10,14 @@ from db import delete_campaign, insert_campaign, query_campaign, update_campaign
 from db import delete_page, insert_page, query_page, update_page
 from db.exc import CampaignNotFoundError, InvalidNameError, NameUnavailableError
 from db.exc import PageNotFoundError, PathUnavailableError
+from db.helpers import get_rtf_fullpath
 from db.models import Campaign
 
 ### Public ###
 
 def destroy_campaign(form):
     campaign_id = form['campaign_id'].value
-    redirect_path = PATH_HOME
+    redirect_path = PATH_ROOT
     try:
         delete_campaign(int(campaign_id))
     except CampaignNotFoundError:
@@ -31,7 +33,7 @@ def open_campaign(form):
         db_name = campaign.db_name
         campaign_skin = campaign.skin
     except CampaignNotFoundError:
-        redirect_path = '?error=' + GEVAR_CAMPAIGN_NOT_FOUND
+        redirect_path = PATH_ROOT + '?error=' + GEVAR_CAMPAIGN_NOT_FOUND
         campaign_name = ''
         db_name = ''
         campaign_skin = ''
@@ -101,7 +103,7 @@ def save_update_campaign(form):
         name = form['name'].value
         skin = form['skin'].value
 
-        redirect_path = PATH_HOME + '?message=' + GETVAR_SAVE_SUCCESS
+        redirect_path = PATH_ROOT + '?message=' + GETVAR_SAVE_SUCCESS
         try:
             update_campaign(int(campaign_id), name=name, skin=skin)
         except CampaignNotFoundError:
@@ -114,29 +116,57 @@ def save_update_campaign(form):
         redirect_path = PATH_MANAGE + '?campaign_id=' + campaign_id + '&error=' + GETVAR_INVALID_NAME
     return redirect_path
         
+##### Page #####
+
+def apply_rtf(db_name, form):
+    if 'rtf' in form:
+        rtf_content = form['rtf'].value
+    else:
+        rtf_content = ''
+
+    if 'path' in form:
+        page_path = form['path'].value
+        try:
+            page = query_page(db_name, page_path)
+            rtf_fullpath = get_rtf_fullpath(db_name, page.rtf)
+            _overwrite_rtf(rtf_fullpath, rtf_content)
+            redirect_path = page_path
+        except PageNotFoundError:
+            redirect_path = PATH_NOT_FOUND
+    else:
+        redirect_path = PATH_NOT_FOUND
+    
+    return redirect_path
+
+def save_rtf(db_name, form):
+    redirect_path = apply_rtf(db_name, form)
+    if 'path' in form:
+        page_path = form['path'].value
+        if redirect_path == page_path:
+            redirect_path = redirect_path + "?edit=true"
+            redirect_path = redirect_path + "&message=" + GETVAR_SAVE_SUCCESS
+    return redirect_path
 
 def save_page(db_name, form):
-    path = form['page_path'].value
-    if not path:
-        path = '/'
-    elif path[0] is not '/':
-        path = '/' + path
+    if 'page_path' in form:
+        path = form['page_path'].value
+        if path[0] is not '/':
+            path = '/' + path
 
-    if 'page_body' in form:
-        body = form['page_body'].value
+        if not _valid_path(path):
+            redirect_path = PATH_NEW + '?error=' + GETVAR_INVALID_PATH
+        elif 'page_title' in form:
+            title = form['page_title'].value
+            try:
+                insert_page(db_name, path, title=title)
+                _create_superpage(db_name, path)
+                redirect_path = path
+            except PathUnavailableError:
+                redirect_path = PATH_NEW + '?error=' + GETVAR_PATH_UNAVAILABLE
+        else:
+            redirect_path = PATH_NEW + '?error=' + GETVAR_INVALID_TITLE
     else:
-        body = ''
-    
-    if 'page_title' in form:
-        title = form['page_title'].value
-        try:
-            insert_page(db_name, path, title=title, body=body)
-            _create_superpage(db_name, path)
-            redirect_path = path
-        except PathUnavailableError:
-            redirect_path = PATH_NEW + '?error=' + GETVAR_PATH_UNAVAILABLE
-    else:
-        redirect_path = PATH_NEW + '?error=' + GETVAR_INVALID_TITLE
+        redirect_path = PATH_NEW + '?error=' + GETVAR_INVALID_PATH
 
     return redirect_path
 
@@ -160,7 +190,7 @@ def toggle_quicklink(db_name, form):
 
 def _create_superpage(db_name, path):
     superpage_path = os.path.dirname(path)
-    if path is not superpage_path:
+    if path != PATH_HOME:
         try:
             query_page(db_name, superpage_path)
         except PageNotFoundError:
@@ -168,3 +198,10 @@ def _create_superpage(db_name, path):
         update_page(db_name, path, superpage_path=superpage_path)
         _create_superpage(db_name, superpage_path)
 
+def _overwrite_rtf(filepath, content):
+    rtf = open(filepath, 'w')
+    rtf.write(content)
+    rtf.close()
+
+def _valid_path(path):
+    return (os.path.commonprefix([path, PATH_HOME]) == PATH_HOME)

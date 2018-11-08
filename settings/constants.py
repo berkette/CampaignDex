@@ -3,12 +3,16 @@ HOST_NAME = 'localhost'
 PORT_NUMBER = 9000
 
 # Page paths
-PATH_HOME = '/'
+PATH_EXIT = '/exit'
+PATH_HOME = '/wiki'
 PATH_MANAGE = '/manage'
 PATH_NEW = '/new'
 PATH_NOT_FOUND = '/not_found'
+PATH_QUILL = '/quill'
+PATH_ROOT = '/'
 
 GETVAR_CAMPAIGN_NOT_FOUND = 'campaign_not_found'
+GETVAR_INVALID_PATH = 'invalid_path'
 GETVAR_INVALID_NAME = 'invalid_name'
 GETVAR_INVALID_TITLE = 'invalid_title'
 GETVAR_NAME_UNAVAILABLE = 'name_unavailable'
@@ -20,8 +24,10 @@ POST_OPEN_CAMPAIGN = '/open_campaign'
 POST_SAVE_CAMPAIGN = '/save_campaign'
 POST_UPDATE_CAMPAIGN = '/update_campaign'
 
+POST_APPLY_RTF = '/apply_rtf'
 POST_DELETE_PAGE = '/delete_page'
 POST_SAVE_PAGE = '/save_page'
+POST_SAVE_RTF = '/save_rtf'
 POST_UPDATE_PAGE = '/update_page'
 POST_TOGGLE_QUICKLINK = '/toggle_quicklink'
 
@@ -30,12 +36,16 @@ CAMPAIGN_DB = 'campaigns.db'
 DB_DIR = 'data/db/'
 DB_PREFIX = 'sqlite:///'
 
+# Content files, paths, and directories
+RTF_DIR = 'data/rtf/'
+
 # Template files, paths, and directories
 CAMPAIGN_HOME_TEMPLATE = 'campaign_home'
 CAMPAIGN_MANAGE_TEMPLATE = 'campaign_manage'
 CAMPAIGN_NEW_TEMPLATE = 'campaign_new'
 HOME_TEMPLATE = 'home'
 NEW_TEMPLATE = 'new'
+PAGE_TEMPLATE = 'page'
 PARTIALS_TEMPLATE = 'partials'
 COMMON_JS = 'common'
 
@@ -69,3 +79,8 @@ SKIN_CAMPAIGN = 'campaign'
 SKIN_DEFAULT = 'default'
 
 PAGE_SKINS = [SKIN_DEFAULT]
+
+# Quill
+QUILL_JS = '/quill.js'
+QUILL_SNOW = '/quill.snow.css'
+QUILL_DIR = 'assets/quill/'

@@ -1,9 +1,6 @@
 <%def name="insert()">
 function exit_campaign() {
-    document.cookie = "${attributes['cookie_id']}" + '=;';
-    document.cookie = "${attributes['cookie_db']}" + '=;';
-    document.cookie = "${attributes['cookie_skin']}" + '=;';
-    window.location.href = "${attributes['home_path']}?exit=true";
+    window.location.href = "${attributes['exit_path']}";
 }
 
 function go_to_home() {

@@ -1,16 +1,17 @@
+import uuid
 from sqlalchemy import Column, Boolean, Integer, String, Text
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 from db.models.base import Base
-from settings import PAGE_TABLE_NAME
+from settings import NEW_TEMPLATE, PAGE_TABLE_NAME, PAGE_TEMPLATE
 
 class Page(Base):
     __tablename__ = PAGE_TABLE_NAME
 
     id = Column(Integer, primary_key=True)
     path = Column('path', String(250), unique=True, nullable=False)
-    title = Column('title', String(250))
-    body = Column('body', Text)
+    title = Column('title', String(250), nullable=False)
+    rtf = Column('rtf', String(250), unique=True)
     quicklink = Column('quicklink', Boolean)
     status = Column('status', Integer)
     superpage_path = Column('superpage_path', String(250),\
@@ -19,22 +20,24 @@ class Page(Base):
 
     superpage = relationship('Page', backref='subpages', remote_side=[path])
 
-    def new(path, *, title='Untitled', body='', quicklink=False, status=200,\
-        superpage_path=None, template='page'):
+    def new(path, *, title='Untitled', quicklink=False, status=200,\
+        superpage_path=None, template=PAGE_TEMPLATE):
         page = Page()
+
         page.path = path
         page.title = title
-        page.body = body
         page.quicklink = quicklink
         page.status = status
         page.superpage_path = superpage_path
         page.template = template
+
+        if template != NEW_TEMPLATE:
+            page.rtf = str(uuid.uuid4()) + '.rtf'
+
         return page
 
     def update(self, path, **kwargs):
         self.path = path
-        if 'body' in kwargs:
-            self.body = kwargs['body']
         if 'quicklink' in kwargs:
             self.quicklink = kwargs['quicklink']
         if 'status' in kwargs:
@@ -52,7 +55,6 @@ class Page(Base):
         page = Page.new(
             path, 
             title='Page Not Found',
-            body="The page you are looking for doesn't exist. Sorry!",
             status=404
         )
         return page

@@ -26,7 +26,7 @@
                 <label for="page_path">Relative URL:</label>
                 <br>
                 <input type="text" name="page_path" value="${attributes['page_path_value']}">
-
+                <br>
                 <label for="page_title">Title:</label>
                 <br>
                 <input type="text" name="page_title" placeholder="Title">

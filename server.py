@@ -26,10 +26,15 @@ class RequestHandler(BaseHTTPRequestHandler):
         if data['status'] == STATUS_REDIRECT:
             self._set_headers(
                 STATUS_REDIRECT,
-                redirect_path = data['content']
+                redirect_path = data['content'],
+                set_cookie = data['set_cookie']
             )
+
         else:
-            self._set_headers(data['status'], 'text/html')
+            self._set_headers(
+                data['status'],
+                data['content_type'],
+                content_length = data['content_length'])
             response = bytes(data['content'], 'UTF-8')
             self.wfile.write(response)
 
@@ -74,19 +79,25 @@ class RequestHandler(BaseHTTPRequestHandler):
         return (parsed.path, get_vars)
 
     def _set_headers(self, status=STATUS_OK, content_type='text/html',\
-        set_cookie=[], redirect_path=None):
+        content_length=None, set_cookie=[], redirect_path=None):
         if status == STATUS_REDIRECT and not redirect_path:
             raise Exception('Must specify redirect_path')
 
         self.send_response(status)
         self.send_header('Content-type', content_type)
+
+#        if content_length:
+#            self.send_header('Content-length', content_length)
+
         for cookie in set_cookie:
             self.send_header(
                 'Set-Cookie',
                 cookie[0] + '=' + cookie[1]
             )
+
         if redirect_path:
             self.send_header('Location', redirect_path)
+
         self.end_headers()
 
 

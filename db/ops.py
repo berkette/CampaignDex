@@ -5,9 +5,10 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from db.exc import NameUnavailableError, UpdateUnspecifiedError
 from db.exc import PageNotFoundError, PathUnavailableError
+from db.helpers import get_rtf_fullpath
 from db.models import Base, Campaign, Page
 from settings import CAMPAIGN_DB, DB_DIR, DB_PREFIX, PAGE_TABLE_NAME
-from settings import ROOT_DIR
+from settings import ROOT_DIR, RTF_DIR
 
 ### Public Methods ###
 
@@ -34,13 +35,23 @@ def delete_campaign(id):
     except NoResultFound:
         _end_session(engine, session)
         raise CampaignNotFoundError(id)
-    
-    db_to_del = ROOT_DIR + DB_DIR + campaign.db_name
+
+    db_to_del = campaign.db_name
     session.delete(campaign)
     session.flush()
 
     # Remove the campaign's page db
-    os.remove(db_to_del)
+    db_full_path = ROOT_DIR + DB_DIR + db_to_del
+    if os.path.isfile(db_full_path):
+        os.remove(db_full_path)
+    
+    # Purge rtfs
+    _purge_rtfs(db_to_del)
+
+    # Clean up the campaign's rtf directory
+    rtf_dir = get_rtf_fullpath(db_to_del, '')
+    if os.path.isdir(rtf_dir):
+        os.rmdir(rtf_dir)
 
     session.commit()
     _end_session(engine, session)
@@ -63,6 +74,11 @@ def insert_campaign(name, **kwargs):
     p_table = Base.metadata.tables[PAGE_TABLE_NAME]
     Base.metadata.create_all(p_engine, tables=[p_table])
     p_engine.dispose()
+
+    # create the campaign's rtf directory
+    rtf_full_dir = get_rtf_fullpath(new_campaign.db_name, '')
+    if not os.path.isdir(rtf_full_dir):
+        os.mkdir(rtf_full_dir)
 
     new_id = new_campaign.id
     session.commit()
@@ -126,7 +142,15 @@ def delete_page(db_name, page_path):
 
     # TODO: case where the page to delete has children
 
+    rt_file = page.rtf
+
     session.delete(page)
+    session.flush()
+
+    # Clean up the rtf
+    if rt_file:
+        _delete_rtf(db_name, rt_file)
+
     session.commit()
     _end_session(engine, session)
     
@@ -142,8 +166,13 @@ def insert_page(db_name, page_path, **kwargs):
         _end_session(engine, session)
         raise PathUnavailableError(page_path)
 
+    # Create rtf if it's supposed to have one
+    if new_page.rtf:
+        _touch_rtf(db_name, new_page.rtf)
+
     session.commit()
     _end_session(engine, session)
+
 
 def query_page(db_name, page_path):
     (engine, session) = _start_session(db_name)
@@ -207,7 +236,6 @@ def query_subpages(db_name, page_path):
     _end_session(engine, session)
     return subpages
 
-
 ### Private Methods ###
 
 def _start_session(db_name):
@@ -220,3 +248,18 @@ def _start_session(db_name):
 def _end_session(engine, session):
     session.close()
     engine.dispose()
+
+def _delete_rtf(db_name, rtf):
+    rtf_full_path = get_rtf_fullpath(db_name, rtf)
+    if os.path.isfile(rtf_full_path):
+        os.remove(rtf_full_path)
+
+def _purge_rtfs(db_name):
+    rtf_dir = get_rtf_fullpath(db_name, '')
+    rtf_list = os.listdir(rtf_dir)
+    for rtf in rtf_list:
+        _delete_rtf(db_name, rtf)
+
+def _touch_rtf(db_name, rtf):
+    rtf_full_path = get_rtf_fullpath(db_name, rtf)
+    open(rtf_full_path, 'a').close()
