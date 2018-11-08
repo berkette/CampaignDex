@@ -10,6 +10,7 @@ PATH_NOT_FOUND = '/not_found'
 
 GETVAR_CAMPAIGN_NOT_FOUND = 'campaign_not_found'
 GETVAR_INVALID_NAME = 'invalid_name'
+GETVAR_INVALID_TITLE = 'invalid_title'
 GETVAR_NAME_UNAVAILABLE = 'name_unavailable'
 GETVAR_PATH_UNAVAILABLE = 'path_unavailable'
 GETVAR_SAVE_SUCCESS = 'save_success'
@@ -18,7 +19,11 @@ POST_DELETE_CAMPAIGN = '/delete_campaign'
 POST_OPEN_CAMPAIGN = '/open_campaign'
 POST_SAVE_CAMPAIGN = '/save_campaign'
 POST_UPDATE_CAMPAIGN = '/update_campaign'
+
+POST_DELETE_PAGE = '/delete_page'
 POST_SAVE_PAGE = '/save_page'
+POST_UPDATE_PAGE = '/update_page'
+POST_TOGGLE_QUICKLINK = '/toggle_quicklink'
 
 # Database files, paths, and directories
 CAMPAIGN_DB = 'campaigns.db'
@@ -26,13 +31,13 @@ DB_DIR = 'data/db/'
 DB_PREFIX = 'sqlite:///'
 
 # Template files, paths, and directories
-CAMPAIGN_BASE_TEMPLATE = 'campaign_base'
 CAMPAIGN_HOME_TEMPLATE = 'campaign_home'
 CAMPAIGN_MANAGE_TEMPLATE = 'campaign_manage'
 CAMPAIGN_NEW_TEMPLATE = 'campaign_new'
-BASE_TEMPLATE = 'base'
 HOME_TEMPLATE = 'home'
 NEW_TEMPLATE = 'new'
+PARTIALS_TEMPLATE = 'partials'
+COMMON_JS = 'common'
 
 CSS_DIR = 'css/'
 CSS_SUFFIX = '.css.mako'
@@ -56,6 +61,7 @@ STATUS_SERVER_ERR = 500
 # Cookies
 COOKIE_ID = 'CAMPAIGNDEX_ID'
 COOKIE_DB = 'CAMPAIGNDEX_DB'
+COOKIE_NAME = 'CAMPAIGNDEX_NAME'
 COOKIE_SKIN = 'CAMPAIGNDEX_SKIN'
 
 # Skins

@@ -4,8 +4,9 @@ from settings import HOME_TEMPLATE, NEW_TEMPLATE
 from settings import GETVAR_CAMPAIGN_NOT_FOUND, GETVAR_INVALID_NAME
 from settings import GETVAR_NAME_UNAVAILABLE, GETVAR_PATH_UNAVAILABLE
 from settings import GETVAR_SAVE_SUCCESS
+from settings import GETVAR_INVALID_TITLE
 from db import delete_campaign, insert_campaign, query_campaign, update_campaign
-from db import insert_page
+from db import delete_page, insert_page, query_page, update_page
 from db.exc import CampaignNotFoundError, InvalidNameError, NameUnavailableError
 from db.exc import PageNotFoundError, PathUnavailableError
 from db.models import Campaign
@@ -26,19 +27,21 @@ def open_campaign(form):
     try:
         campaign = query_campaign(campaign_id)
         redirect_path = PATH_HOME
+        campaign_name = campaign.name
         db_name = campaign.db_name
-        db_skin = campaign.get_skin()
+        campaign_skin = campaign.skin
     except CampaignNotFoundError:
         redirect_path = '?error=' + GEVAR_CAMPAIGN_NOT_FOUND
-        db_id = ''
+        campaign_name = ''
         db_name = ''
-        db_skin = ''
+        campaign_skin = ''
     
     data = {
         'redirect_path': redirect_path,
         'id': str(campaign_id),
         'db': db_name,
-        'skin': db_skin
+        'name': campaign_name,
+        'skin': campaign_skin
     }
     return data
 
@@ -47,44 +50,48 @@ def save_new_campaign(form):
         name = form['name'].value
         skin = form['skin'].value
         try:
-            db_id = insert_campaign(name, skin=skin)
-            campaign = query_campaign(db_id)
+            campaign_id = insert_campaign(name, skin=skin)
+            campaign = query_campaign(campaign_id)
 
             # Make sure home page exists
             insert_page(
                 campaign.db_name,
                 PATH_HOME,
-                name,
+                title="Home",
                 template=HOME_TEMPLATE
             )
             # Make sure new page form exists
             insert_page(
                 campaign.db_name,
                 PATH_NEW,
-                "Create a New Page",
+                title="Create a New Page",
                 template=NEW_TEMPLATE
             )
 
             redirect_path = PATH_HOME
             db_name = campaign.db_name
-            db_skin = campaign.get_skin()
+            campaign_name = campaign.name
+            campaign_skin = campaign.skin
         except NameUnavailableError:
             redirect_path = PATH_NEW + '?error=' +\
                 GETVAR_NAME_UNAVAILABLE + '&name=' + name
-            db_id = ''
+            campaign_id = ''
             db_name = ''
-            db_skin = ''
+            campaign_name = ''
+            campaign_skin = ''
     else:
         redirect_path = PATH_NEW + '?error=' + GETVAR_INVALID_NAME
-        db_id = ''
+        campaign_id = ''
         db_name = ''
-        db_skin = ''
+        campaign_name = ''
+        campaign_skin = ''
     
     data = {
         'redirect_path': redirect_path,
-        'id': str(db_id),
+        'id': str(campaign_id),
         'db': db_name,
-        'skin': db_skin
+        'name': campaign_name,
+        'skin': campaign_skin
     }
     return data
 
@@ -115,21 +122,39 @@ def save_page(db_name, form):
     elif path[0] is not '/':
         path = '/' + path
 
-    title = form['page_title'].value
     if 'page_body' in form:
         body = form['page_body'].value
     else:
         body = ''
-
-    try:
-        insert_page(db_name, path, title, body=body)
-        _create_superpage(db_name, path)
-        redirect_path = path
-    except PathUnavailableError:
-        redirect_path = PATH_NEW = '?error=' + GETVAR_PATH_UNAVAILABLE
+    
+    if 'page_title' in form:
+        title = form['page_title'].value
+        try:
+            insert_page(db_name, path, title=title, body=body)
+            _create_superpage(db_name, path)
+            redirect_path = path
+        except PathUnavailableError:
+            redirect_path = PATH_NEW + '?error=' + GETVAR_PATH_UNAVAILABLE
+    else:
+        redirect_path = PATH_NEW + '?error=' + GETVAR_INVALID_TITLE
 
     return redirect_path
 
+def toggle_quicklink(db_name, form):
+    page_path = form['path'].value
+    form_ql = form['quicklink'].value
+    if form_ql == 'False':
+        quicklink = True
+    else:
+        quicklink = False
+
+    try:
+        page = update_page(db_name, page_path, quicklink=quicklink)
+        redirect_path = page_path + '?message=' + GETVAR_SAVE_SUCCESS
+    except PageNotFoundError:
+        redirect_path = PATH_NOT_FOUND
+
+    return redirect_path
 
 ### Private ###
 

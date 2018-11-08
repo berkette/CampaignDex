@@ -22,9 +22,16 @@ class RequestHandler(BaseHTTPRequestHandler):
             cookie=cookie,
             get_vars=get_vars
         )
-        self._set_headers(data['status'], 'text/html')
-        response = bytes(data['content'], 'UTF-8')
-        self.wfile.write(response)
+
+        if data['status'] == STATUS_REDIRECT:
+            self._set_headers(
+                STATUS_REDIRECT,
+                redirect_path = data['content']
+            )
+        else:
+            self._set_headers(data['status'], 'text/html')
+            response = bytes(data['content'], 'UTF-8')
+            self.wfile.write(response)
 
     def do_POST(self):
         form = cgi.FieldStorage(

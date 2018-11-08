@@ -82,10 +82,9 @@ def query_campaign(id):
 
     return campaign
 
-def update_campaign(id, name=None, skin=None, add_quicklink=None,\
-    remove_quicklink=None):
+def update_campaign(id, name=None, skin=None):
     # Must specify at least one change
-    if not (name or skin or add_quicklink or remove_quicklink):
+    if not (name or skin):
         raise UpdateUnspecifiedError
 
     (engine, session) = _start_session(CAMPAIGN_DB)
@@ -103,31 +102,6 @@ def update_campaign(id, name=None, skin=None, add_quicklink=None,\
 
     if skin:
         campaign.update_skin(skin)
-
-    if add_quicklink:
-        # Make sure the quicklink page exists
-        try:
-            ql_title = query_page(campaign.db_name, add_quicklink).title
-        except PageNotFoundError:
-            _end_session(engine, session)
-            raise PageNotFoundError(add_quicklink)
-        
-        campaign.add_quicklink(add_quicklink, ql_title)
-
-    if remove_quicklink:
-        try:
-            campaign.remove_quicklink(
-                remove_quicklink[0],
-                remove_quicklink[1]
-            )
-        except QuicklinkNotFoundError:
-            _end_session(engine, session)
-            raise QuicklinkNotFoundError(
-                Campaign.format_quicklink(
-                    remove_quicklink[0], 
-                    remove_quicklink[1]
-                )
-            )
 
     # Save changes
     try:
@@ -157,11 +131,11 @@ def delete_page(db_name, page_path):
     _end_session(engine, session)
     
 
-def insert_page(db_name, page_path, title, **kwargs):
+def insert_page(db_name, page_path, **kwargs):
     (engine, session) = _start_session(db_name)
     
     try:
-        new_page = Page.new(page_path, title, **kwargs)
+        new_page = Page.new(page_path, **kwargs)
         session.add(new_page)
         session.flush()
     except IntegrityError:
@@ -183,12 +157,12 @@ def query_page(db_name, page_path):
 
     return page
 
-def update_page(db_name, page_path, title, **kwargs):
+def update_page(db_name, page_path, **kwargs):
     (engine, session) = _start_session(db_name)
     
     try:
         page = session.query(Page).filter(Page.path == page_path).one()
-        page.update(page_path, title, **kwargs)
+        page.update(page_path, **kwargs)
         session.flush()
     except NoResultFound:
         _end_session(engine, session)
@@ -199,6 +173,40 @@ def update_page(db_name, page_path, title, **kwargs):
     
     session.commit()
     _end_session(engine, session)
+
+def query_quicklinks(db_name):
+    (engine, session) = _start_session(db_name)
+
+    try:
+        ql_pages = session.query(Page).filter(Page.quicklink == True).all()
+    except NoResultFound:
+        ql_pages = []
+
+    quicklinks = []
+
+    for ql_page in ql_pages:
+        quicklinks.append({'path': ql_page.path, 'title': ql_page.title})
+
+    _end_session(engine, session)
+    return quicklinks
+
+def query_subpages(db_name, page_path):
+    (engine, session) = _start_session(db_name)
+
+    try:
+        page = session.query(Page).filter(Page.path == page_path).one()
+    except NoResultFound:
+        _end_session(engine, session)
+        raise PageNotFoundError(page_path)
+
+    subpages = []
+    raw_subpages = page.subpages
+    for subpage in raw_subpages:
+        subpages.append({'path': subpage.path, 'title': subpage.title})
+
+    _end_session(engine, session)
+    return subpages
+
 
 ### Private Methods ###
 

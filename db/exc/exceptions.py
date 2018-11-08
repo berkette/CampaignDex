@@ -3,15 +3,14 @@ class CampaignNotFoundError(Exception):
         message = 'No campaign was found with id {}'.format(id)
         super().__init__(message)
 
-class DuplicateQuicklinkError(Exception):
-    def __init__(self, quicklink):
-        message = '{} is already a quicklink'.format(quicklink)
-        super().__init__(message)
-        self.errors = {'quicklink': quicklink}
-
 class InvalidNameError(Exception):
     def __init__(self, name):
         message = 'The name {} is not valid'.format(name)
+        super().__init__(message)
+
+class InvalidSkinError(Exception):
+    def __init__(self, skin):
+        message = '{} is not a valid skin'.format(skin)
         super().__init__(message)
 
 class NameUnavailableError(Exception):
@@ -27,11 +26,6 @@ class PageNotFoundError(Exception):
 class PathUnavailableError(Exception):
     def __init__(self, page_path):
         message = 'A page already exists at path {}'.format(page_path)
-        super().__init__(message)
-
-class QuicklinkNotFoundError(Exception):
-    def __init__(self, ql):
-        message = 'The quicklink {} does not exist'.format(ql)
         super().__init__(message)
 
 class UpdateUnspecifiedError(Exception):
