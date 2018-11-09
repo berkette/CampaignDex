@@ -24,6 +24,10 @@ function edit_page() {
     window.location.href = "${attributes['page_path']}?edit=true";
 }
 
+function view_page() {
+    window.location.href = "${attributes['page_path']}";
+}
+
 function initialize_quill(editor) {
     var container = document.getElementById('quill_editor')
     
@@ -58,7 +62,7 @@ function save_page(apply) {
     var rtf = JSON.stringify(quill.getContents());
     $("#save_hidden").attr("value", rtf);
 
-    if (apply = true) {
+    if (apply == true) {
         $("#save_form").attr("action", "${attributes['apply_page']}");
     } else {
         $("#save_form").attr("action", "${attributes['save_page']}");

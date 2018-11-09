@@ -282,6 +282,9 @@ def get_response_data(path, *, cookie=None, get_vars={}):
     }
     return data
 
+################
+##### POST #####
+################
 
 def post_action(path, form, *, cookie=None, get_vars={}):
     # Handles POST requests

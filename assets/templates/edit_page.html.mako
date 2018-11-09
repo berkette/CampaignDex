@@ -27,6 +27,7 @@
         <div id="main_content_body">
             <button id="save_button" onclick="save_page(false)">Save</button>
             <button id="apply_button" onclick="save_page(true)">Apply</button>
+            <button id="cancel_button" onclick="view_page()">Cancel</button>
             <div id="quill_editor"></div>
         </div>
     </div>

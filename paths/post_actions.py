@@ -1,5 +1,6 @@
 import os
-from settings import CAMPAIGN_DB, PATH_NEW, PATH_HOME, PATH_MANAGE, PATH_ROOT
+from settings import CAMPAIGN_DB, PATH_NEW, PATH_HOME, PATH_MANAGE
+from settings import PATH_NOT_FOUND, PATH_ROOT
 from settings import HOME_TEMPLATE, NEW_TEMPLATE
 from settings import GETVAR_CAMPAIGN_NOT_FOUND
 from settings import GETVAR_INVALID_PATH, GETVAR_INVALID_NAME
@@ -140,11 +141,8 @@ def apply_rtf(db_name, form):
 
 def save_rtf(db_name, form):
     redirect_path = apply_rtf(db_name, form)
-    if 'path' in form:
-        page_path = form['path'].value
-        if redirect_path == page_path:
-            redirect_path = redirect_path + "?edit=true"
-            redirect_path = redirect_path + "&message=" + GETVAR_SAVE_SUCCESS
+    if redirect_path != PATH_NOT_FOUND:
+        redirect_path = redirect_path + '?edit=true&message=' + GETVAR_SAVE_SUCCESS
     return redirect_path
 
 def save_page(db_name, form):
