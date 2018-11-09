@@ -10,8 +10,9 @@ from paths.post_actions import destroy_campaign, open_campaign
 from paths.post_actions import save_new_campaign, save_update_campaign
 from paths.post_actions import save_page, toggle_quicklink
 from paths.post_actions import apply_rtf, save_rtf
-from settings import PATH_EXIT, PATH_HOME, PATH_MANAGE, PATH_NEW
-from settings import PATH_NOT_FOUND, PATH_QUILL, PATH_ROOT
+from settings import PATH_EXIT, PATH_HOME, PATH_JQUERY, PATH_MANAGE
+from settings import PATH_NEW, PATH_NOT_FOUND, PATH_QUILL, PATH_ROOT
+from settings import PATH_RTF
 from settings import GETVAR_CAMPAIGN_NOT_FOUND
 from settings import GETVAR_INVALID_PATH, GETVAR_INVALID_NAME
 from settings import GETVAR_NAME_UNAVAILABLE, GETVAR_PATH_UNAVAILABLE
@@ -33,6 +34,7 @@ from settings import STATUS_REDIRECT, STATUS_SERVER_ERR
 from settings import COOKIE_ID, COOKIE_DB, COOKIE_NAME, COOKIE_SKIN
 from settings import SKIN_CAMPAIGN, SKIN_DEFAULT
 from settings import PAGE_SKINS
+from settings import JQUERY_JS, JQUERY_DIR
 from settings import QUILL_JS, QUILL_SNOW, QUILL_DIR
 
 ### Public ###
@@ -40,44 +42,85 @@ from settings import QUILL_JS, QUILL_SNOW, QUILL_DIR
 def get_response_data(path, *, cookie=None, get_vars={}):
     # server.py calls this method, so don't change the name. Should
     # return a dictionary with keys 'status' (int) and 'content' (string)
-    campaign_id = None
-    db_name = None
-    skin = SKIN_DEFAULT
+
+    # Default response values
+    status = STATUS_OK
+    content = None
+    content_type = "text/html"
+    content_length = None
+    redirect_path = None
+    set_cookie = []
+
+    build_response = True
+
+    # Cookie values
+    cookie_id_val = False
+    cookie_name_val = False
+    cookie_db_val = False
+    cookie_skin_val = False
 
     if cookie:
         if COOKIE_ID in cookie:
-            campaign_id = cookie[COOKIE_ID].value
-            campaign_name = cookie[COOKIE_NAME].value
-            db_name = cookie[COOKIE_DB].value
-            skin = cookie[COOKIE_SKIN].value
+            cookie_id_val = cookie[COOKIE_ID].value
+        if COOKIE_NAME in cookie:
+            cookie_name_val = cookie[COOKIE_NAME].value
+        if COOKIE_DB in cookie:
+            cookie_db_val = cookie[COOKIE_DB].value
+        if COOKIE_SKIN in cookie:
+            cookie_skin_val = cookie[COOKIE_SKIN].value
 
-    wiki = (os.path.commonprefix([path, PATH_HOME]) == PATH_HOME)
+    # GET variables
+    getvar_campaign_id = False
+    getvar_edit = False
+    getvar_error = False
+    getvar_message = False
+    getvar_name = ''
+    getvar_path = False
+
+    if 'campaign_id' in get_vars:
+        getvar_campaign_id = int(get_vars['campaign_id'][0])
+    if 'edit' in get_vars:
+        getvar_edit = True
+    if 'error' in get_vars:
+        getvar_error = get_vars['error'][0]
+    if 'message' in get_vars:
+        getvar_message = get_vars['message'][0]
+    if 'name' in get_vars:
+        getvar_name = get_vars['name'][0]
+    if 'path' in get_vars:
+        getvar_path = get_vars['path'][0]
+
+    # Check if the path is /new or a subpage of /wiki
+    wiki = _is_subpage(path, PATH_HOME)
     wiki_op = (path == PATH_NEW)
 
-    if db_name and (wiki or wiki_op):
-        # Means the user is looking at a specific campaign
+    if cookie_db_val and (wiki or wiki_op):
+        # Means the user is looking at a specific campaign's pages
         try:
-            page = query_page(db_name, path)
-            subpages = query_subpages(db_name, path)
+            page = query_page(cookie_db_val, path)
+            subpages = query_subpages(cookie_db_val, path)
         except PageNotFoundError:
+            # Give a pretty 404 Not Found Page
             page = Page.page_not_found(path)
             subpages = []
 
-        quicklinks = query_quicklinks(db_name)
+        quicklinks = query_quicklinks(cookie_db_val)
         status = page.status
         template_name = page.template
 
-        if 'edit' in get_vars:
+        if getvar_edit:
+            # Means the user wants to edit quill content
             template_name = "edit_" + template_name
 
-        attributes = {
-            'campaign_name': campaign_name,
+        attributes = {  # attributes that apply to all pages
+            'campaign_name': cookie_name_val,
             'cookie_id': COOKIE_ID,
             'cookie_db': COOKIE_DB,
             'cookie_name': COOKIE_NAME,
             'cookie_skin': COOKIE_SKIN,
-            'css_filepath': _build_css_path(skin),
+            'css_filepath': _build_css_path(cookie_skin_val),
             'home_path': PATH_HOME,
+            'jquery_js': PATH_JQUERY + JQUERY_JS,
             'js_common': COMMON_JS + JS_SUFFIX,
             'js_filepath': _build_js_path(page.template),
             'new_path': PATH_NEW,
@@ -91,17 +134,17 @@ def get_response_data(path, *, cookie=None, get_vars={}):
         }
 
         if path != PATH_NEW:
-            attributes['rtf_content'] = _get_rtf_content(\
-                db_name, page.rtf)
-            attributes['db_name'] = db_name
+            # Home or /wiki subpage
+            attributes['rtf'] = PATH_RTF + page.rtf
             attributes['apply_page'] = POST_APPLY_RTF
             attributes['save_page'] = POST_SAVE_RTF
             attributes['quill_js'] = PATH_QUILL + QUILL_JS
             attributes['quill_snow'] = PATH_QUILL + QUILL_SNOW
 
         if path == PATH_NEW:
-            if 'path' in get_vars:
-                page_path_value = get_vars['path'][0]
+            if getvar_path:
+                # Presets a path for the form
+                page_path_value = getvar_path
             else:
                 page_path_value = PATH_HOME
 
@@ -109,55 +152,56 @@ def get_response_data(path, *, cookie=None, get_vars={}):
             attributes['page_path_value'] = page_path_value
 
         elif path != PATH_HOME:
+            # /wiki subpage
             attributes['quicklink'] = page.quicklink
             attributes['superpage_path'] = os.path.dirname(page.path)
             attributes['toggle_quicklink'] = POST_TOGGLE_QUICKLINK
 
-    elif db_name:
+    elif cookie_db_val:
+        build_response = False
         # Probably a resource query
-        set_cookie = []
-        content_type = "text/html"
-        content_length = None
-        if os.path.commonprefix([path, PATH_QUILL]) == PATH_QUILL:
+        if path == PATH_JQUERY + JQUERY_JS:
+            # Asking for the jquery library
+            content = _get_file_content(ROOT_DIR + JQUERY_DIR + JQUERY_JS)
+            content_length = _byte_len(content)
+            content_type = "application/javascript"
+
+        elif _is_subpage(path, PATH_QUILL):
             # Looking for Quill resources
             if path == PATH_QUILL + QUILL_JS:
-                status = 200
+                # quill.js
                 content = _get_file_content(ROOT_DIR + QUILL_DIR + QUILL_JS)
-                content_length = len(content)
-                content_type = "text/javascript"
+                content_length = _byte_len(content)
+                content_type = "application/javascript"
             elif path == PATH_QUILL + QUILL_SNOW:
-                status = 200
+                # quill.snow.css
                 content = _get_file_content(ROOT_DIR + QUILL_DIR + QUILL_SNOW)
-                content_length = len(content)
+                content_length = _byte_len(content)
                 content_type = "text/css"
+
+        elif _is_subpage(path, PATH_RTF):
+            # Looking for rtf page contents
+            content = _get_file_content(ROOT_DIR + RTF_DIR + _get_rtf_filepath(cookie_db_val, path))
+            content_length = _byte_len(content)
+            content_type = "application/json"
                 
         elif path == PATH_EXIT:
             # User is exiting a campaign
             status = STATUS_REDIRECT
-            content = PATH_ROOT
+            redirect_path = PATH_ROOT
             set_cookie.append((COOKIE_ID, ''))
             set_cookie.append((COOKIE_DB, ''))
             set_cookie.append((COOKIE_NAME, ''))
             set_cookie.append((COOKIE_SKIN, ''))
 
         else:
+            # Any other URL gets redirected to /wiki
             status = STATUS_REDIRECT
-            content = PATH_HOME
-
-        data = {
-            'status': status,
-            'content': content,
-            'content_length': content_length,
-            'content_type': content_type,
-            'set_cookie': set_cookie
-        }
-
-        return data
+            redirect_path = PATH_HOME
 
     else:
         # Means the user is looking at campaign selection/creation
         if path == PATH_ROOT:
-            status = STATUS_OK
             attributes = {
                 'campaigns': all_campaigns(),
                 'css_filepath': _build_css_path(SKIN_CAMPAIGN),
@@ -167,9 +211,9 @@ def get_response_data(path, *, cookie=None, get_vars={}):
                 'open_campaign': POST_OPEN_CAMPAIGN
             }
             template_name = CAMPAIGN_HOME_TEMPLATE
-        elif path == PATH_MANAGE:
-            campaign = query_campaign(int(get_vars['campaign_id'][0]))
-            status = STATUS_OK
+
+        elif path == PATH_MANAGE and getvar_campaign_id:
+            campaign = query_campaign(getvar_campaign_id)
             attributes = {
                 'campaign_id': campaign.id,
                 'campaign_name': campaign.name,
@@ -182,66 +226,65 @@ def get_response_data(path, *, cookie=None, get_vars={}):
                 'skins': PAGE_SKINS
             }
             template_name = CAMPAIGN_MANAGE_TEMPLATE
+
         elif path == PATH_NEW:
-            if 'name' in get_vars:
-                get_var_name = get_vars['name'][0]
-            else:
-                get_var_name = ''
-            status = STATUS_OK
             attributes = {
                 'home_path': PATH_ROOT,
                 'css_filepath': _build_css_path(SKIN_CAMPAIGN),
                 'js_filepath': _build_js_path(CAMPAIGN_NEW_TEMPLATE),
-                'name': get_var_name,
+                'name': getvar_name,
                 'save_campaign': POST_SAVE_CAMPAIGN,
                 'skins': PAGE_SKINS
             }
             template_name = CAMPAIGN_NEW_TEMPLATE
+
         else:
-            return {'status': STATUS_REDIRECT, 'content': PATH_ROOT}
+            build_response = False
+            status = STATUS_REDIRECT
+            redirect_path = PATH_ROOT
 
     # Error messages to display after a POST
-    if 'error' in get_vars:
-        error = get_vars['error'][0]
-        if error == GETVAR_CAMPAIGN_NOT_FOUND:
-            attributes['error'] = 'The campaign couldn\'t be found'
-        elif error == GETVAR_INVALID_PATH:
-            attributes['error'] = 'The path must be a subpage of {}'.format(PATH_HOME)
-        elif error == GETVAR_INVALID_NAME:
-            attributes['error'] = 'The campaign must have a name'
-        elif error == GETVAR_INVALID_TITLE:
-            attributes['error'] = 'The page must have a title'
-        elif error == GETVAR_NAME_UNAVAILABLE:
-            attributes['error'] = 'A campaign with this name already exists'
-        elif error == GETVAR_PATH_UNAVAILABLE:
-            attributes['error'] = 'A page at this path already exists'
+    if getvar_error == GETVAR_CAMPAIGN_NOT_FOUND:
+        attributes['error'] = 'The campaign couldn\'t be found'
+    elif getvar_error == GETVAR_INVALID_PATH:
+        attributes['error'] = 'The path must be a subpage of {}'.format(PATH_HOME)
+    elif getvar_error == GETVAR_INVALID_NAME:
+        attributes['error'] = 'The campaign must have a name'
+    elif getvar_error == GETVAR_INVALID_TITLE:
+        attributes['error'] = 'The page must have a title'
+    elif getvar_error == GETVAR_NAME_UNAVAILABLE:
+        attributes['error'] = 'A campaign with this name already exists'
+    elif getvar_error == GETVAR_PATH_UNAVAILABLE:
+        attributes['error'] = 'A page at this path already exists'
 
-    if 'message' in get_vars:
-        message = get_vars['message'][0]
-        if message == GETVAR_SAVE_SUCCESS:
-            attributes['message'] = 'Changes successfully saved'
+    # Non-error messages
+    if getvar_message == GETVAR_SAVE_SUCCESS:
+        attributes['message'] = 'Changes successfully saved'
 
-    # Build the response content    
-    try:
-        template_lookup = TemplateLookup(directories=[_build_template_dir()])
-        template_filename = _build_template_filename(template_name)
-        template = template_lookup.get_template(template_filename)
-        content = template.render(attributes=attributes)
-    except FileNotFoundError:
-        status = STATUS_SERVER_ERR
-        content = 'FileNotFoundError: Could not locate the template {}'.format(template_name)
+    # Build the response content
+    if build_response:
+        try:
+            template_lookup = TemplateLookup(directories=[_build_template_dir()])
+            template_filename = _build_template_filename(template_name)
+            template = template_lookup.get_template(template_filename)
+            content = template.render(attributes=attributes)
+        except FileNotFoundError:
+            status = STATUS_SERVER_ERR
+            content = 'FileNotFoundError: Could not locate the template {}'.format(template_name)
 
     data = {
         'status': status,
         'content': content,
-        'content_type': "text/html",
-        'content_length': None,
-        'set_cookie': ''
+        'content_type': content_type,
+        'content_length': content_length,
+        'redirect_path': redirect_path,
+        'set_cookie': set_cookie
     }
-
     return data
 
-def post_action(path, form, cookie=None):
+
+def post_action(path, form, *, cookie=None, get_vars={}):
+    # Handles POST requests
     set_cookie = []
 
     if path == POST_DELETE_CAMPAIGN:
@@ -266,31 +309,17 @@ def post_action(path, form, cookie=None):
     elif path == POST_UPDATE_CAMPAIGN:
         redirect_path = save_update_campaign(form)
 
-    elif path == POST_APPLY_RTF:
-        if COOKIE_DB in cookie:
-            db_name = cookie[COOKIE_DB].value
-            redirect_path = apply_rtf(db_name, form)
-        else:
-            redirect_path = PATH_NOT_FOUND
-        
-    elif path == POST_SAVE_RTF:
-        if COOKIE_DB in cookie:
-            db_name = cookie[COOKIE_DB].value
-            redirect_path = save_rtf(db_name, form)
-        else:
-            redirect_path = PATH_NOT_FOUND
-
-    elif path == POST_SAVE_PAGE:
-        if COOKIE_DB in cookie:
-            db_name = cookie[COOKIE_DB].value
-            redirect_path = save_page(db_name, form)
-        else:
-            redirect_path = PATH_NOT_FOUND
-
-    elif path == POST_TOGGLE_QUICKLINK:
-        if COOKIE_DB in cookie:
-            db_name = cookie[COOKIE_DB].value
-            redirect_path = toggle_quicklink(db_name, form)
+    elif COOKIE_DB in cookie:
+        # Post comes from campaign-specific path
+        cookie_db_val = cookie[COOKIE_DB].value  
+        if path == POST_APPLY_RTF:
+            redirect_path = apply_rtf(cookie_db_val, form)
+        elif path == POST_SAVE_RTF:
+            redirect_path = save_rtf(cookie_db_val, form)
+        elif path == POST_SAVE_PAGE:
+            redirect_path = save_page(cookie_db_val, form)
+        elif path == POST_TOGGLE_QUICKLINK:
+            redirect_path = toggle_quicklink(cookie_db_val, form)
         else:
             redirect_path = PATH_NOT_FOUND
 
@@ -309,7 +338,7 @@ def _build_js_path(template_name):
     return JS_DIR + template_name + JS_SUFFIX
 
 def _build_path_links(path):
-    if (os.path.commonprefix([path, PATH_HOME]) != PATH_HOME) or (path == PATH_HOME):
+    if (not _is_subpage(path, PATH_HOME)) or (path == PATH_HOME):
         path_links = []
     else:
         path_links = _build_path_links(os.path.dirname(path))
@@ -325,15 +354,17 @@ def _build_template_dir():
 def _build_template_filename(template_name):
     return template_name + TEMPLATE_SUFFIX
 
-def _get_rtf_content(db_name, rtf):
-    rtf_full_path = get_rtf_fullpath(db_name, rtf)
-    if os.path.isfile(rtf_full_path):
-        return _get_file_content(rtf_full_path)
-    else:
-        return ''
+def _byte_len(str):
+    return len(str.encode('utf-8'))
 
 def _get_file_content(filepath):
     f = open(filepath)
     response = f.read()
     f.close()
     return response
+
+def _get_rtf_filepath(db_name, rtf):
+    return os.path.splitext(db_name)[0] + '/' + os.path.basename(rtf)
+
+def _is_subpage(path, superpage_path):
+    return os.path.commonprefix([path, superpage_path]) == superpage_path

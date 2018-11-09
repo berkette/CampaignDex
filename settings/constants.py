@@ -8,9 +8,14 @@ PATH_HOME = '/wiki'
 PATH_MANAGE = '/manage'
 PATH_NEW = '/new'
 PATH_NOT_FOUND = '/not_found'
-PATH_QUILL = '/quill'
 PATH_ROOT = '/'
 
+# Resource query path partials
+PATH_JQUERY = '/jquery/'
+PATH_QUILL = '/quill/'
+PATH_RTF = '/rtf/'
+
+# GET variable names
 GETVAR_CAMPAIGN_NOT_FOUND = 'campaign_not_found'
 GETVAR_INVALID_PATH = 'invalid_path'
 GETVAR_INVALID_NAME = 'invalid_name'
@@ -19,6 +24,7 @@ GETVAR_NAME_UNAVAILABLE = 'name_unavailable'
 GETVAR_PATH_UNAVAILABLE = 'path_unavailable'
 GETVAR_SAVE_SUCCESS = 'save_success'
 
+# POST paths
 POST_DELETE_CAMPAIGN = '/delete_campaign'
 POST_OPEN_CAMPAIGN = '/open_campaign'
 POST_SAVE_CAMPAIGN = '/save_campaign'
@@ -35,9 +41,7 @@ POST_TOGGLE_QUICKLINK = '/toggle_quicklink'
 CAMPAIGN_DB = 'campaigns.db'
 DB_DIR = 'data/db/'
 DB_PREFIX = 'sqlite:///'
-
-# Content files, paths, and directories
-RTF_DIR = 'data/rtf/'
+DB_SUFFIX = '.db'
 
 # Template files, paths, and directories
 CAMPAIGN_HOME_TEMPLATE = 'campaign_home'
@@ -58,6 +62,10 @@ JS_SUFFIX = '.js.mako'
 TEMPLATE_DIR = 'assets/templates/'
 TEMPLATE_SUFFIX = '.html.mako'
 
+# Content files, paths, and directories
+RTF_DIR = 'data/rtf/'
+RTF_SUFFIX = '.delta'
+
 # Table names
 CAMPAIGN_TABLE_NAME = 'campaigns'
 PAGE_TABLE_NAME = 'pages'
@@ -68,7 +76,7 @@ STATUS_NOT_FOUND = 404
 STATUS_REDIRECT = 303
 STATUS_SERVER_ERR = 500
 
-# Cookies
+# Cookie Names
 COOKIE_ID = 'CAMPAIGNDEX_ID'
 COOKIE_DB = 'CAMPAIGNDEX_DB'
 COOKIE_NAME = 'CAMPAIGNDEX_NAME'
@@ -81,6 +89,10 @@ SKIN_DEFAULT = 'default'
 PAGE_SKINS = [SKIN_DEFAULT]
 
 # Quill
-QUILL_JS = '/quill.js'
-QUILL_SNOW = '/quill.snow.css'
+QUILL_JS = 'quill.js'
+QUILL_SNOW = 'quill.snow.css'
 QUILL_DIR = 'assets/quill/'
+
+# JQuery
+JQUERY_JS = 'jquery-3.3.1.min.js'
+JQUERY_DIR = 'assets/jquery/'

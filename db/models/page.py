@@ -4,6 +4,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 from db.models.base import Base
 from settings import NEW_TEMPLATE, PAGE_TABLE_NAME, PAGE_TEMPLATE
+from settings import RTF_SUFFIX
 
 class Page(Base):
     __tablename__ = PAGE_TABLE_NAME
@@ -32,7 +33,7 @@ class Page(Base):
         page.template = template
 
         if template != NEW_TEMPLATE:
-            page.rtf = str(uuid.uuid4()) + '.rtf'
+            page.rtf = str(uuid.uuid4()) + RTF_SUFFIX
 
         return page
 

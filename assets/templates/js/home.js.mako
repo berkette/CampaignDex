@@ -4,6 +4,7 @@
 <script>
 
 ${js_common.insert()}
+${js_common.insert_quill()}
 
 </script>
 </%def>

@@ -1,3 +1,11 @@
+<%def name="scripts(include_quill)">
+    <script src="${attributes['jquery_js']}"></script>
+    % if include_quill == True:
+    <link href="${attributes['quill_snow']}" rel="stylesheet">
+    <script src="${attributes['quill_js']}"></script>
+    % endif
+</%def>
+
 <%def name="header()">
     <div id="header">
         <button id="header_exit_button" onclick="exit_campaign()">Exit Campaign</button>

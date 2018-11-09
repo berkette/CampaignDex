@@ -1,13 +1,10 @@
 <%namespace name="partials" file="${context['attributes']['partials_filepath']}"/>
-
 <%namespace name="js" file="${context['attributes']['js_filepath']}"/>
 <%namespace name="css" file="${context['attributes']['css_filepath']}"/>
 
 <html>
 <head>
-    <link href="${attributes['quill_snow']}" rel="stylesheet">
-    <script src="${attributes['quill_js']}"></script>
-    
+    ${partials.scripts(True)}
     ${js.insert()}
     ${css.insert()}
 </head>
@@ -32,6 +29,7 @@
             <div id="quill_editor"></div>
         </div>
     </div>
+    
     <form id="quicklink_form" action="${attributes['toggle_quicklink']}" method="post">
         <input type="hidden" name="path" value="${attributes['page_path']}">
         <input type="hidden" name="quicklink" value="${attributes['quicklink']}">
@@ -39,7 +37,7 @@
 
     <script>
         initialize_quill(false);
-        populate_page();
+        get_rtf_content();
     </script>
 </body>
 </html>

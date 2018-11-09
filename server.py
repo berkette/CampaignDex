@@ -17,6 +17,7 @@ class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         (parsed_path, get_vars) = self._parse_url()
         cookie = self._build_cookie()
+
         data = get_response_data(
             parsed_path,
             cookie=cookie,
@@ -26,7 +27,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         if data['status'] == STATUS_REDIRECT:
             self._set_headers(
                 STATUS_REDIRECT,
-                redirect_path = data['content'],
+                redirect_path = data['redirect_path'],
                 set_cookie = data['set_cookie']
             )
 
@@ -34,11 +35,14 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._set_headers(
                 data['status'],
                 data['content_type'],
-                content_length = data['content_length'])
+                content_length = data['content_length']
+            )
             response = bytes(data['content'], 'UTF-8')
             self.wfile.write(response)
 
     def do_POST(self):
+        (parsed_path, get_vars) = self._parse_url()
+
         form = cgi.FieldStorage(
             fp = self.rfile,
             headers = self.headers,
@@ -47,12 +51,14 @@ class RequestHandler(BaseHTTPRequestHandler):
                 'CONTENT_TYPE': self.headers['Content-Type']
             }
         )
+
         cookie = self._build_cookie()
 
         (redirect_path, set_cookie) = post_action(
-            self.path,
+            parsed_path,
             form,
-            cookie=cookie
+            cookie=cookie,
+            get_vars=get_vars
         )
 
         self._set_headers(
@@ -79,15 +85,17 @@ class RequestHandler(BaseHTTPRequestHandler):
         return (parsed.path, get_vars)
 
     def _set_headers(self, status=STATUS_OK, content_type='text/html',\
-        content_length=None, set_cookie=[], redirect_path=None):
+        content_length=None, redirect_path=None, set_cookie=[]):
         if status == STATUS_REDIRECT and not redirect_path:
             raise Exception('Must specify redirect_path')
 
         self.send_response(status)
-        self.send_header('Content-type', content_type)
 
-#        if content_length:
-#            self.send_header('Content-length', content_length)
+        if status != STATUS_REDIRECT:
+            self.send_header('Content-type', content_type)
+
+        if content_length:
+            self.send_header('Content-length', content_length)
 
         for cookie in set_cookie:
             self.send_header(

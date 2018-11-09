@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import Column, Integer, String
 from db.exc import InvalidNameError, InvalidSkinError
 from db.models.base import Base
-from settings import CAMPAIGN_TABLE_NAME
+from settings import CAMPAIGN_TABLE_NAME, DB_SUFFIX
 from settings import PAGE_SKINS
 
 class Campaign(Base):
@@ -27,7 +27,7 @@ class Campaign(Base):
         else:
             raise InvalidSkinError(skin)
 
-        campaign.db_name = str(uuid.uuid4()) + '.db'
+        campaign.db_name = str(uuid.uuid4()) + DB_SUFFIX
         return campaign
 
     def update_name(self, name):

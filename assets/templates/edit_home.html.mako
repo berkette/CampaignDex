@@ -17,13 +17,19 @@
             <h1>${attributes['title']}</h1>
         </div>
         <div id="main_content_body">
-            <button id="edit_button" onclick="edit_page()">Edit</button>
+            <button id="save_button" onclick="save_page(false)">Save</button>
+            <button id="apply_button" onclick="save_page(true)">Apply</button>
             <div id="quill_editor"></div>
         </div>
     </div>
 
+    <form id="save_form" method="post">
+        <input type="hidden" name="path" value="${attributes['page_path']}">
+        <input id="save_hidden" type="hidden" name="rtf">
+    </form>
+
     <script>
-        initialize_quill(false);
+        initialize_quill(true);
         get_rtf_content();
     </script>
 </body>

@@ -6,7 +6,7 @@
 ${js_common.insert()}
 
 function submit_form() {
-    document.getElementById("new_page_form").submit()
+    $("#new_page_form").submit()
 }
 
 </script>

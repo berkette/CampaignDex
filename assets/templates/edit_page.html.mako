@@ -1,13 +1,10 @@
 <%namespace name="partials" file="${context['attributes']['partials_filepath']}"/>
-
 <%namespace name="js" file="${context['attributes']['js_filepath']}"/>
 <%namespace name="css" file="${context['attributes']['css_filepath']}"/>
 
 <html>
 <head>
-    <link href="${attributes['quill_snow']}" rel="stylesheet">
-    <script src="${attributes['quill_js']}"></script>
-
+    ${partials.scripts(True)}
     ${js.insert()}
     ${css.insert()}
 </head>
@@ -46,7 +43,7 @@
     
     <script>
         initialize_quill(true);
-        populate_page();
+        get_rtf_content();
     </script>
 </body>
 </html>

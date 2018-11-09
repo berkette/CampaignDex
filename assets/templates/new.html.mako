@@ -1,10 +1,10 @@
 <%namespace name="partials" file="${context['attributes']['partials_filepath']}"/>
-
 <%namespace name="js" file="${context['attributes']['js_filepath']}"/>
 <%namespace name="css" file="${context['attributes']['css_filepath']}"/>
 
 <html>
 <head>
+    ${partials.scripts(False)}
     ${js.insert()}
     ${css.insert()}
 </head>
