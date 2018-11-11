@@ -18,7 +18,8 @@
         </div>
 
         <div id="main_content_buttons">
-            <button class="cd_button" id="cancel_button" onclick="go_back()">Cancel</button>
+            <button class="cd_button" id="save_button" onclick="submit_form()">Save</button>
+            <button class="cd_button" id="cancel_button" onclick="go_to_home()">Cancel</button>
         </div>
 
         <div id="main_content_body">
@@ -28,15 +29,12 @@
             </div>
 % endif
             <form class="cd_form" id="page_form" action="${attributes['save_page']}" method="post">
-                <label for="page_path">Relative URL:</label>
-                <br>
-                <input type="text" name="page_path" value="${attributes['page_path_value']}">
-                <br>
                 <label for="page_title">Title:</label>
                 <br>
-                <input type="text" name="page_title" placeholder="Title">
+                <input type="text" name="page_title" value="${attributes['title']}">
+                <input type="hidden" name="original_path" value="${attributes['page_path']}">
             </form>
-            <button class="cd_button" id="form_button" onclick="submit_form()">Create Page</button>
+            <button class="cd_button" id="form_button" onclick="submit_form()">Save Changes</button>
         </div>
     </div>
 </body>

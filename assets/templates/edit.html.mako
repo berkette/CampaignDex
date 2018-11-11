@@ -14,16 +14,21 @@
     
     <div id="main_content">
         <div id="main_content_title">
-            <h1>${attributes['title']}</h1>
+            <h1 class="cd_h1">${attributes['title']}</h1>
         </div>
+
+        <div id="main_content_buttons">
+            <button class="cd_button" id="save_button" onclick="save_page(false)">Save</button>
+            <button class="cd_button" id="apply_button" onclick="save_page(true)">Apply</button>
+            <button class="cd_button" id="cancel_button" onclick="go_to_view()">Cancel</button>
+        </div>
+
         <div id="main_content_body">
-            <button id="save_button" onclick="save_page(false)">Save</button>
-            <button id="apply_button" onclick="save_page(true)">Apply</button>
             <div id="quill_editor"></div>
         </div>
     </div>
 
-    <form id="save_form" method="post">
+    <form class="cd_form" id="save_form" method="post">
         <input type="hidden" name="path" value="${attributes['page_path']}">
         <input id="save_hidden" type="hidden" name="rtf">
     </form>

@@ -14,10 +14,15 @@
     
     <div id="main_content">
         <div id="main_content_title">
-            <h1>${attributes['title']}</h1>
+            <h1 class="cd_h1">${attributes['title']}</h1>
         </div>
+
+        <div id="main_content_buttons">
+            <button class="cd_button" id="manage_button" onclick="go_to_manage()">Manage</button>
+            <button class="cd_button" id="edit_button" onclick="go_to_edit()">Edit</button>
+        </div>
+        
         <div id="main_content_body">
-            <button id="edit_button" onclick="edit_page()">Edit</button>
             <div id="quill_editor"></div>
         </div>
     </div>

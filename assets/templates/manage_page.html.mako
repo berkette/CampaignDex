@@ -18,7 +18,9 @@
         </div>
 
         <div id="main_content_buttons">
-            <button class="cd_button" id="cancel_button" onclick="go_back()">Cancel</button>
+            <button class="cd_button" id="delete_button" onclick="delete_page()">Delete</button>
+            <button class="cd_button" id="save_button" onclick="submit_form()">Save</button>
+            <button class="cd_button" id="cancel_button" onclick="go_to_view()">Cancel</button>
         </div>
 
         <div id="main_content_body">
@@ -34,10 +36,15 @@
                 <br>
                 <label for="page_title">Title:</label>
                 <br>
-                <input type="text" name="page_title" placeholder="Title">
+                <input type="text" name="page_title" value="${attributes['title']}">
+                <input type="hidden" name="original_path" value="${attributes['page_path']}">
             </form>
-            <button class="cd_button" id="form_button" onclick="submit_form()">Create Page</button>
+            <button class="cd_button" id="form_button" onclick="submit_form()">Save Changes</button>
         </div>
     </div>
+
+    <form class="cd_form" id="delete_form" action="${attributes['delete_page']}" method="post">
+        <input type="hidden" name="path" value="${attributes['page_path']}">
+    </form>
 </body>
 </html>

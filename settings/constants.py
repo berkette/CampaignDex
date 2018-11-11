@@ -14,6 +14,7 @@ PATH_ROOT = '/'
 PATH_JQUERY = '/jquery/'
 PATH_QUILL = '/quill/'
 PATH_RTF = '/rtf/'
+PATH_IMAGES = '/images/'
 
 # GET variable names
 GETVAR_CAMPAIGN_NOT_FOUND = 'campaign_not_found'
@@ -47,10 +48,14 @@ DB_SUFFIX = '.db'
 CAMPAIGN_HOME_TEMPLATE = 'campaign_home'
 CAMPAIGN_MANAGE_TEMPLATE = 'campaign_manage'
 CAMPAIGN_NEW_TEMPLATE = 'campaign_new'
+EDIT_TEMPLATE = 'edit'
 HOME_TEMPLATE = 'home'
 NEW_TEMPLATE = 'new'
 PAGE_TEMPLATE = 'page'
 PARTIALS_TEMPLATE = 'partials'
+
+MANAGE_TEMPLATE_PREFIX = 'manage_'
+
 COMMON_JS = 'common'
 
 CSS_DIR = 'css/'
@@ -65,6 +70,8 @@ TEMPLATE_SUFFIX = '.html.mako'
 # Content files, paths, and directories
 RTF_DIR = 'data/rtf/'
 RTF_SUFFIX = '.delta'
+
+IMAGES_DIR = 'assets/images/'
 
 # Table names
 CAMPAIGN_TABLE_NAME = 'campaigns'

@@ -1,18 +1,22 @@
 <%def name="insert()">
 <style>
 body {
+    background-image: url("/images/hexellence.png");
     color: #191B1D;
     font-family: "Arial", sans-serif;
     margin: 0;
+    text-align: center;
 }
 
 #header {
+    background-color: #191B1D;
+    background-image: url("/images/binding_dark.png");
+    height: 150px;
+    left: 0px;
     position: absolute;
     top: 0px;
-    left: 0px;
     width: 100%;
-    height: 150px;
-    background-color: #191B1D;
+    z-index: 10;
 }
 
 h1 {
@@ -40,10 +44,15 @@ h2 {
 }
 
 #body {
+    background-color: white;
+    display: inline-block;
+    max-width: 800px;
+    padding-bottom: 50px;
     padding-top: 170px;
-    position: absolute;
+    position: relative;
     text-align: center;
     width: 100%;
+    z-index: 5;
 }
 
 button {

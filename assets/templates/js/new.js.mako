@@ -5,9 +5,5 @@
 
 ${js_common.insert()}
 
-function submit_form() {
-    $("#new_page_form").submit()
-}
-
 </script>
 </%def>

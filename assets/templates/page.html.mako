@@ -13,24 +13,29 @@
     ${partials.sidebar()}
     
     <div id="main_content">
-        <button id="superpage_button" onclick="go_to_superpage()">Up</button>
-        <button id="quicklink_button" onclick="toggle_quicklink()">
-% if attributes['quicklink'] == True:
-            Remove Quicklink
-% else:
-            Add Quicklink
-% endif
-        </button>
         <div id="main_content_title">
-            <h1>${attributes['title']}</h1>
+            <h1 class="cd_h1">${attributes['title']}</h1>
         </div>
+
+        <div id="main_content_buttons">
+            <button class="cd_button" id="superpage_button" onclick="go_to_superpage()">Up</button>
+            <button class="cd_button" id="manage_button" onclick="go_to_manage()">Manage</button>
+            <button class="cd_button" id="edit_button" onclick="go_to_edit()">Edit</button>
+            <button class="cd_button" id="quicklink_button" onclick="toggle_quicklink()">
+% if attributes['quicklink'] == True:
+                Remove Quicklink
+% else:
+                Add Quicklink
+% endif
+            </button>
+        </div>
+
         <div id="main_content_body">
-            <button id="edit_button" onclick="edit_page()">Edit</button>
             <div id="quill_editor"></div>
         </div>
     </div>
     
-    <form id="quicklink_form" action="${attributes['toggle_quicklink']}" method="post">
+    <form class="cd_form" id="quicklink_form" action="${attributes['toggle_quicklink']}" method="post">
         <input type="hidden" name="path" value="${attributes['page_path']}">
         <input type="hidden" name="quicklink" value="${attributes['quicklink']}">
     </form>

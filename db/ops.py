@@ -9,6 +9,7 @@ from db.helpers import get_rtf_fullpath
 from db.models import Base, Campaign, Page
 from settings import CAMPAIGN_DB, DB_DIR, DB_PREFIX, PAGE_TABLE_NAME
 from settings import ROOT_DIR, RTF_DIR
+from settings import PAGE_TEMPLATE
 
 ### Public Methods ###
 
@@ -140,15 +141,24 @@ def delete_page(db_name, page_path):
         _end_session(engine, session)
         raise PageNotFoundError(page_path)
 
-    # TODO: case where the page to delete has children
+    if len(page.subpages) > 0:
+        replace = True
+    else:
+        replace = False
 
     rt_file = page.rtf
 
-    session.delete(page)
-    session.flush()
+    if replace:
+        page.update(page_path, title='Untitled', quicklink=False, status=200,\
+            template=PAGE_TEMPLATE)
+    else:
+        session.delete(page)
+        session.flush()
 
     # Clean up the rtf
-    if rt_file:
+    if rt_file and replace:
+        _empty_rtf(db_name, rt_file)
+    elif rt_file:
         _delete_rtf(db_name, rt_file)
 
     session.commit()
@@ -253,6 +263,11 @@ def _delete_rtf(db_name, rtf):
     rtf_full_path = get_rtf_fullpath(db_name, rtf)
     if os.path.isfile(rtf_full_path):
         os.remove(rtf_full_path)
+
+def _empty_rtf(db_name, rtf):
+    rtf_full_path = get_rtf_fullpath(db_name, rtf)
+    if os.path.isfile(rtf_full_path):
+        open(rtf_full_path, 'w').close()
 
 def _purge_rtfs(db_name):
     rtf_dir = get_rtf_fullpath(db_name, '')

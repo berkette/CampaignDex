@@ -8,11 +8,12 @@ from db.helpers import get_rtf_fullpath
 from db.models import Campaign, Page
 from paths.post_actions import destroy_campaign, open_campaign
 from paths.post_actions import save_new_campaign, save_update_campaign
-from paths.post_actions import save_page, toggle_quicklink
+from paths.post_actions import destroy_page, save_new_page, save_update_page
+from paths.post_actions import toggle_quicklink
 from paths.post_actions import apply_rtf, save_rtf
-from settings import PATH_EXIT, PATH_HOME, PATH_JQUERY, PATH_MANAGE
-from settings import PATH_NEW, PATH_NOT_FOUND, PATH_QUILL, PATH_ROOT
-from settings import PATH_RTF
+from settings import PATH_EXIT, PATH_HOME, PATH_IMAGES, PATH_JQUERY
+from settings import PATH_MANAGE, PATH_NEW, PATH_NOT_FOUND, PATH_QUILL
+from settings import PATH_ROOT, PATH_RTF
 from settings import GETVAR_CAMPAIGN_NOT_FOUND
 from settings import GETVAR_INVALID_PATH, GETVAR_INVALID_NAME
 from settings import GETVAR_NAME_UNAVAILABLE, GETVAR_PATH_UNAVAILABLE
@@ -21,11 +22,13 @@ from settings import GETVAR_INVALID_TITLE
 from settings import POST_DELETE_CAMPAIGN, POST_OPEN_CAMPAIGN
 from settings import POST_SAVE_CAMPAIGN, POST_UPDATE_CAMPAIGN
 from settings import POST_APPLY_RTF, POST_SAVE_RTF
-from settings import POST_SAVE_PAGE, POST_TOGGLE_QUICKLINK
+from settings import POST_DELETE_PAGE, POST_SAVE_PAGE, POST_TOGGLE_QUICKLINK
+from settings import POST_UPDATE_PAGE
 from settings import CAMPAIGN_DB, DB_DIR
 from settings import CAMPAIGN_HOME_TEMPLATE, CAMPAIGN_MANAGE_TEMPLATE
 from settings import CAMPAIGN_NEW_TEMPLATE
-from settings import HOME_TEMPLATE, NEW_TEMPLATE, PARTIALS_TEMPLATE
+from settings import EDIT_TEMPLATE, HOME_TEMPLATE, NEW_TEMPLATE
+from settings import PARTIALS_TEMPLATE, MANAGE_TEMPLATE_PREFIX
 from settings import COMMON_JS
 from settings import CSS_DIR, JS_DIR, ROOT_DIR, TEMPLATE_DIR, RTF_DIR
 from settings import CSS_SUFFIX, JS_SUFFIX, TEMPLATE_SUFFIX
@@ -34,6 +37,7 @@ from settings import STATUS_REDIRECT, STATUS_SERVER_ERR
 from settings import COOKIE_ID, COOKIE_DB, COOKIE_NAME, COOKIE_SKIN
 from settings import SKIN_CAMPAIGN, SKIN_DEFAULT
 from settings import PAGE_SKINS
+from settings import IMAGES_DIR
 from settings import JQUERY_JS, JQUERY_DIR
 from settings import QUILL_JS, QUILL_SNOW, QUILL_DIR
 
@@ -73,6 +77,7 @@ def get_response_data(path, *, cookie=None, get_vars={}):
     getvar_campaign_id = False
     getvar_edit = False
     getvar_error = False
+    getvar_manage = False
     getvar_message = False
     getvar_name = ''
     getvar_path = False
@@ -83,6 +88,8 @@ def get_response_data(path, *, cookie=None, get_vars={}):
         getvar_edit = True
     if 'error' in get_vars:
         getvar_error = get_vars['error'][0]
+    if 'manage' in get_vars:
+        getvar_manage = True
     if 'message' in get_vars:
         getvar_message = get_vars['message'][0]
     if 'name' in get_vars:
@@ -108,10 +115,6 @@ def get_response_data(path, *, cookie=None, get_vars={}):
         status = page.status
         template_name = page.template
 
-        if getvar_edit:
-            # Means the user wants to edit quill content
-            template_name = "edit_" + template_name
-
         attributes = {  # attributes that apply to all pages
             'campaign_name': cookie_name_val,
             'cookie_id': COOKIE_ID,
@@ -133,15 +136,29 @@ def get_response_data(path, *, cookie=None, get_vars={}):
             'title': page.title
         }
 
-        if path != PATH_NEW:
+        if wiki:
             # Home or /wiki subpage
             attributes['rtf'] = PATH_RTF + page.rtf
-            attributes['apply_page'] = POST_APPLY_RTF
-            attributes['save_page'] = POST_SAVE_RTF
             attributes['quill_js'] = PATH_QUILL + QUILL_JS
             attributes['quill_snow'] = PATH_QUILL + QUILL_SNOW
+            attributes['apply_page'] = POST_APPLY_RTF
+            attributes['save_page'] = POST_SAVE_RTF
+            if getvar_edit:
+                # Means the user wants to edit quill content
+                template_name = EDIT_TEMPLATE
+            elif getvar_manage:
+                # Means the user wants to manage the page
+                template_name = MANAGE_TEMPLATE_PREFIX + template_name
+                if getvar_path:
+                    page_path_value = getvar_path
+                else:
+                    page_path_value = path
 
-        if path == PATH_NEW:
+                attributes['save_page'] = POST_UPDATE_PAGE
+                attributes['page_path_value'] = page_path_value
+
+        if wiki_op:
+            # /new
             if getvar_path:
                 # Presets a path for the form
                 page_path_value = getvar_path
@@ -152,34 +169,45 @@ def get_response_data(path, *, cookie=None, get_vars={}):
             attributes['page_path_value'] = page_path_value
 
         elif path != PATH_HOME:
-            # /wiki subpage
+            # /wiki subpage view
+            attributes['delete_page'] = POST_DELETE_PAGE
             attributes['quicklink'] = page.quicklink
             attributes['superpage_path'] = os.path.dirname(page.path)
             attributes['toggle_quicklink'] = POST_TOGGLE_QUICKLINK
 
+    elif path == PATH_JQUERY + JQUERY_JS:
+        # Asking for the jquery library
+        build_response = False
+        content = _get_file_content(ROOT_DIR + JQUERY_DIR + JQUERY_JS)
+        content_length = _byte_len(content)
+        content_type = "application/javascript"
+
+    elif _is_subpage(path, PATH_QUILL):
+        # Looking for Quill resources
+        build_response = False
+        if path == PATH_QUILL + QUILL_JS:
+            # quill.js
+            content = _get_file_content(ROOT_DIR + QUILL_DIR + QUILL_JS)
+            content_length = _byte_len(content)
+            content_type = "application/javascript"
+        elif path == PATH_QUILL + QUILL_SNOW:
+            # quill.snow.css
+            content = _get_file_content(ROOT_DIR + QUILL_DIR + QUILL_SNOW)
+            content_length = _byte_len(content)
+            content_type = "text/css"
+
+    elif _is_subpage(path, PATH_IMAGES):
+        # Looking for an image
+        build_response = False
+        image_name = os.path.basename(path)
+        content = _get_file_content(ROOT_DIR + IMAGES_DIR + image_name, True)
+        content_length = len(content)
+        content_type = "image/" + os.path.splitext(image_name)[1][1:]
+
     elif cookie_db_val:
         build_response = False
         # Probably a resource query
-        if path == PATH_JQUERY + JQUERY_JS:
-            # Asking for the jquery library
-            content = _get_file_content(ROOT_DIR + JQUERY_DIR + JQUERY_JS)
-            content_length = _byte_len(content)
-            content_type = "application/javascript"
-
-        elif _is_subpage(path, PATH_QUILL):
-            # Looking for Quill resources
-            if path == PATH_QUILL + QUILL_JS:
-                # quill.js
-                content = _get_file_content(ROOT_DIR + QUILL_DIR + QUILL_JS)
-                content_length = _byte_len(content)
-                content_type = "application/javascript"
-            elif path == PATH_QUILL + QUILL_SNOW:
-                # quill.snow.css
-                content = _get_file_content(ROOT_DIR + QUILL_DIR + QUILL_SNOW)
-                content_length = _byte_len(content)
-                content_type = "text/css"
-
-        elif _is_subpage(path, PATH_RTF):
+        if _is_subpage(path, PATH_RTF):
             # Looking for rtf page contents
             content = _get_file_content(ROOT_DIR + RTF_DIR + _get_rtf_filepath(cookie_db_val, path))
             content_length = _byte_len(content)
@@ -317,12 +345,16 @@ def post_action(path, form, *, cookie=None, get_vars={}):
         cookie_db_val = cookie[COOKIE_DB].value  
         if path == POST_APPLY_RTF:
             redirect_path = apply_rtf(cookie_db_val, form)
+        elif path == POST_DELETE_PAGE:
+            redirect_path = destroy_page(cookie_db_val, form)
         elif path == POST_SAVE_RTF:
             redirect_path = save_rtf(cookie_db_val, form)
         elif path == POST_SAVE_PAGE:
-            redirect_path = save_page(cookie_db_val, form)
+            redirect_path = save_new_page(cookie_db_val, form)
         elif path == POST_TOGGLE_QUICKLINK:
             redirect_path = toggle_quicklink(cookie_db_val, form)
+        elif path == POST_UPDATE_PAGE:
+            redirect_path = save_update_page(cookie_db_val, form)
         else:
             redirect_path = PATH_NOT_FOUND
 
@@ -360,10 +392,17 @@ def _build_template_filename(template_name):
 def _byte_len(str):
     return len(str.encode('utf-8'))
 
-def _get_file_content(filepath):
-    f = open(filepath)
-    response = f.read()
-    f.close()
+def _get_file_content(filepath, image=False):
+    if os.path.isfile(filepath):
+        if image:
+            f = open(filepath, 'rb')
+        else:
+            f = open(filepath, 'r')
+        response = f.read()
+        f.close()
+    else:
+        print("Error: filepath not valid {}\n".format(filepath))
+        response = ''
     return response
 
 def _get_rtf_filepath(db_name, rtf):

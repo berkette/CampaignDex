@@ -37,7 +37,10 @@ class RequestHandler(BaseHTTPRequestHandler):
                 data['content_type'],
                 content_length = data['content_length']
             )
-            response = bytes(data['content'], 'UTF-8')
+            if data['content_type'] in ['image/png', 'image/jpeg', 'image/gif']:
+                response = data['content']
+            else:
+                response = bytes(data['content'], 'UTF-8')
             self.wfile.write(response)
 
     def do_POST(self):
