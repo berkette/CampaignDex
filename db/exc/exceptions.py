@@ -3,6 +3,10 @@ class CampaignNotFoundError(Exception):
         message = 'No campaign was found with id {}'.format(id)
         super().__init__(message)
 
+class DatabaseNotFoundError(Exception):
+    def __init__(self, db_name):
+        message = 'No database found with name {}'.format(db_name)
+
 class InvalidNameError(Exception):
     def __init__(self, name):
         message = 'The name {} is not valid'.format(name)
@@ -26,6 +30,11 @@ class PageNotFoundError(Exception):
 class PathUnavailableError(Exception):
     def __init__(self, page_path):
         message = 'A page already exists at path {}'.format(page_path)
+        super().__init__(message)
+
+class ServerResponseError(Exception):
+    def __init__(self, page_path):
+        message = 'Something went wrong while trying to reach {}'.format(page_path)
         super().__init__(message)
 
 class UpdateUnspecifiedError(Exception):

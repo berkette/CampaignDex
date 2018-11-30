@@ -1,7 +1,7 @@
 import os
 from mako.template import Template
 from mako.lookup import TemplateLookup
-from db import all_campaigns, query_campaign, query_page
+from db import all_campaigns, query_campaign, query_page, get_db_names
 from db import query_quicklinks, query_subpages
 from db.exc import PageNotFoundError
 from db.helpers import get_rtf_fullpath
@@ -19,6 +19,7 @@ from settings import GETVAR_INVALID_PATH, GETVAR_INVALID_NAME
 from settings import GETVAR_NAME_UNAVAILABLE, GETVAR_PATH_UNAVAILABLE
 from settings import GETVAR_SAVE_SUCCESS
 from settings import GETVAR_INVALID_TITLE
+from settings import GETVAR_NO_PATH, GETVAR_PAGE_NOT_FOUND
 from settings import POST_DELETE_CAMPAIGN, POST_OPEN_CAMPAIGN
 from settings import POST_SAVE_CAMPAIGN, POST_UPDATE_CAMPAIGN
 from settings import POST_APPLY_RTF, POST_SAVE_RTF
@@ -55,7 +56,9 @@ def get_response_data(path, *, cookie=None, get_vars={}):
     redirect_path = None
     set_cookie = []
 
-    build_response = True
+    # Internal build options
+    build_response = True   # Whether the response will be built from a template
+    reset_cookies = False   # Whether cookies will be cleared
 
     # Cookie values
     cookie_id_val = False
@@ -63,15 +66,23 @@ def get_response_data(path, *, cookie=None, get_vars={}):
     cookie_db_val = False
     cookie_skin_val = False
 
-    if cookie:
-        if COOKIE_ID in cookie:
-            cookie_id_val = cookie[COOKIE_ID].value
-        if COOKIE_NAME in cookie:
-            cookie_name_val = cookie[COOKIE_NAME].value
-        if COOKIE_DB in cookie:
+    if cookie and (COOKIE_DB in cookie):
+        # Is it a valid db_name
+        if cookie[COOKIE_DB].value in get_db_names():
+            # Campaign's db name
             cookie_db_val = cookie[COOKIE_DB].value
-        if COOKIE_SKIN in cookie:
-            cookie_skin_val = cookie[COOKIE_SKIN].value
+            if COOKIE_ID in cookie:
+                # Campaign id
+                cookie_id_val = cookie[COOKIE_ID].value
+            if COOKIE_NAME in cookie:
+                # Campaign name
+                cookie_name_val = cookie[COOKIE_NAME].value
+            if COOKIE_SKIN in cookie:
+                # Campaign's skin
+                cookie_skin_val = cookie[COOKIE_SKIN].value
+        else:
+            # There is an invalid db_name stored in a cookie
+            reset_cookies = True    # Probably an out-of-date browser session
 
     # GET variables
     getvar_campaign_id = False
@@ -99,7 +110,10 @@ def get_response_data(path, *, cookie=None, get_vars={}):
 
     # Check if the path is /new or a subpage of /wiki
     wiki = _is_subpage(path, PATH_HOME)
-    wiki_op = (path == PATH_NEW)
+    wiki_new = (path == PATH_NEW)
+    wiki_error = (path == PATH_ERROR)
+    wiki_not_found = (path == PATH_NOT_FOUND)
+    wiki_op = wiki_new or wiki_error or wiki_not_found
 
     if cookie_db_val and (wiki or wiki_op):
         # Means the user is looking at a specific campaign's pages
@@ -157,7 +171,8 @@ def get_response_data(path, *, cookie=None, get_vars={}):
                 attributes['save_page'] = POST_UPDATE_PAGE
                 attributes['page_path_value'] = page_path_value
 
-        if wiki_op:
+
+        if wiki_new:
             # /new
             if getvar_path:
                 # Presets a path for the form
@@ -206,7 +221,7 @@ def get_response_data(path, *, cookie=None, get_vars={}):
 
     elif cookie_db_val:
         build_response = False
-        # Probably a resource query
+        # Probably RTF query or exit
         if _is_subpage(path, PATH_RTF):
             # Looking for rtf page contents
             content = _get_file_content(ROOT_DIR + RTF_DIR + _get_rtf_filepath(cookie_db_val, path))
@@ -217,10 +232,7 @@ def get_response_data(path, *, cookie=None, get_vars={}):
             # User is exiting a campaign
             status = STATUS_REDIRECT
             redirect_path = PATH_ROOT
-            set_cookie.append((COOKIE_ID, ''))
-            set_cookie.append((COOKIE_DB, ''))
-            set_cookie.append((COOKIE_NAME, ''))
-            set_cookie.append((COOKIE_SKIN, ''))
+            reset_cookies = True
 
         else:
             # Any other URL gets redirected to /wiki
@@ -271,6 +283,7 @@ def get_response_data(path, *, cookie=None, get_vars={}):
             status = STATUS_REDIRECT
             redirect_path = PATH_ROOT
 
+
     # Error messages to display after a POST
     if getvar_error == GETVAR_CAMPAIGN_NOT_FOUND:
         attributes['error'] = 'The campaign couldn\'t be found'
@@ -282,14 +295,18 @@ def get_response_data(path, *, cookie=None, get_vars={}):
         attributes['error'] = 'The page must have a title'
     elif getvar_error == GETVAR_NAME_UNAVAILABLE:
         attributes['error'] = 'A campaign with this name already exists'
+    elif getvar_error == GETVAR_NO_PATH:
+        attributes['error'] = 'Form submission did not include a value for path'
     elif getvar_error == GETVAR_PATH_UNAVAILABLE:
         attributes['error'] = 'A page at this path already exists'
+    elif getvar_error == GETVAR_PAGE_NOT_FOUND:
+        attributes['error'] = 'Could not find the page you tried to change'
 
     # Non-error messages
     if getvar_message == GETVAR_SAVE_SUCCESS:
         attributes['message'] = 'Changes successfully saved'
 
-    # Build the response content
+    # Build the response content from a template
     if build_response:
         try:
             template_lookup = TemplateLookup(directories=[_build_template_dir()])
@@ -299,6 +316,10 @@ def get_response_data(path, *, cookie=None, get_vars={}):
         except FileNotFoundError:
             status = STATUS_SERVER_ERR
             content = 'FileNotFoundError: Could not locate the template {}'.format(template_name)
+
+    # Reset cookies
+    if reset_cookies:
+        set_cookie = _clear_cookies(set_cookie)
 
     data = {
         'status': status,
@@ -340,23 +361,28 @@ def post_action(path, form, *, cookie=None, get_vars={}):
     elif path == POST_UPDATE_CAMPAIGN:
         redirect_path = save_update_campaign(form)
 
-    elif COOKIE_DB in cookie:
+    elif cookie and (COOKIE_DB in cookie):
         # Post comes from campaign-specific path
-        cookie_db_val = cookie[COOKIE_DB].value  
-        if path == POST_APPLY_RTF:
-            redirect_path = apply_rtf(cookie_db_val, form)
-        elif path == POST_DELETE_PAGE:
-            redirect_path = destroy_page(cookie_db_val, form)
-        elif path == POST_SAVE_RTF:
-            redirect_path = save_rtf(cookie_db_val, form)
-        elif path == POST_SAVE_PAGE:
-            redirect_path = save_new_page(cookie_db_val, form)
-        elif path == POST_TOGGLE_QUICKLINK:
-            redirect_path = toggle_quicklink(cookie_db_val, form)
-        elif path == POST_UPDATE_PAGE:
-            redirect_path = save_update_page(cookie_db_val, form)
+        cookie_db_val = cookie[COOKIE_DB].value
+        if cookie_db_val in get_db_names():
+            # Must be a valid db_name
+            if path == POST_APPLY_RTF:
+                redirect_path = apply_rtf(cookie_db_val, form)
+            elif path == POST_DELETE_PAGE:
+                redirect_path = destroy_page(cookie_db_val, form)
+            elif path == POST_SAVE_RTF:
+                redirect_path = save_rtf(cookie_db_val, form)
+            elif path == POST_SAVE_PAGE:
+                redirect_path = save_new_page(cookie_db_val, form)
+            elif path == POST_TOGGLE_QUICKLINK:
+                redirect_path = toggle_quicklink(cookie_db_val, form)
+            elif path == POST_UPDATE_PAGE:
+                redirect_path = save_update_page(cookie_db_val, form)
+            else:
+                redirect_path = PATH_NOT_FOUND
         else:
             redirect_path = PATH_NOT_FOUND
+            set_cookie = _clear_cookies(set_cookie)
 
     else:
         redirect_path = PATH_NOT_FOUND
@@ -392,6 +418,13 @@ def _build_template_filename(template_name):
 def _byte_len(str):
     return len(str.encode('utf-8'))
 
+def _clear_cookies(set_cookie):
+    set_cookie.append((COOKIE_ID, ''))
+    set_cookie.append((COOKIE_DB, ''))
+    set_cookie.append((COOKIE_NAME, ''))
+    set_cookie.append((COOKIE_SKIN, ''))
+    return set_cookie
+
 def _get_file_content(filepath, image=False):
     if os.path.isfile(filepath):
         if image:
@@ -401,7 +434,6 @@ def _get_file_content(filepath, image=False):
         response = f.read()
         f.close()
     else:
-        print("Error: filepath not valid {}\n".format(filepath))
         response = ''
     return response
 

@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 from db.models.base import Base
 from settings import NEW_TEMPLATE, PAGE_TABLE_NAME, PAGE_TEMPLATE
 from settings import RTF_SUFFIX
+from settings import STATUS_NOT_FOUND, STATUS_SERVER_ERR
 
 class Page(Base):
     __tablename__ = PAGE_TABLE_NAME
@@ -56,7 +57,15 @@ class Page(Base):
         page = Page.new(
             path, 
             title='Page Not Found',
-            status=404
+            status=STATUS_NOT_FOUND
+        )
+        return page
+
+    def page_error(path):
+        page = Page.new(
+            path,
+            title='Internal Server Error',
+            status=STATUS_SERVER_ERR
         )
         return page
 

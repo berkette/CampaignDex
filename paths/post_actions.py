@@ -7,6 +7,7 @@ from settings import GETVAR_INVALID_PATH, GETVAR_INVALID_NAME
 from settings import GETVAR_NAME_UNAVAILABLE, GETVAR_PATH_UNAVAILABLE
 from settings import GETVAR_SAVE_SUCCESS
 from settings import GETVAR_INVALID_TITLE
+from settings import GETVAR_NO_PATH, GETVAR_PAGE_NOT_FOUND
 from db import delete_campaign, insert_campaign, query_campaign, update_campaign
 from db import delete_page, insert_page, query_page, update_page
 from db.exc import CampaignNotFoundError, InvalidNameError, NameUnavailableError
@@ -122,11 +123,13 @@ def save_update_campaign(form):
         
 ##### Page #####
 
-def apply_rtf(db_name, form):
+def apply_rtf(db_name, form, from_save=False):
     if 'rtf' in form:
         rtf_content = form['rtf'].value
     else:
         rtf_content = ''
+
+    save_error = False
 
     if 'path' in form:
         page_path = form['path'].value
@@ -136,11 +139,16 @@ def apply_rtf(db_name, form):
             _overwrite_rtf(rtf_fullpath, rtf_content)
             redirect_path = page_path
         except PageNotFoundError:
-            redirect_path = PATH_NOT_FOUND
+            redirect_path = PATH_ERROR + '?error=' + GETVAR_PAGE_NOT_FOUND
+            save_error = True
     else:
-        redirect_path = PATH_NOT_FOUND
+        redirect_path = PATH_ERROR + '?error=' + GETVAR_NO_PATH
+        save_error = True
     
-    return redirect_path
+    if from_save:
+        return (redirect_path, save_error)
+    else:
+        return redirect_path
 
 def destroy_page(db_name, form):
     if 'path' in form:
@@ -149,15 +157,15 @@ def destroy_page(db_name, form):
             delete_page(db_name, path)
             redirect_path = PATH_HOME + '?message=' + GETVAR_SAVE_SUCCESS
         except PageNotFoundError:
-            redirect_path = PATH_NOT_FOUND
+            redirect_path = PATH_ERROR + '?error=' + GETVAR_PAGE_NOT_FOUND
     else:
-        redirect_path = PATH_NOT_FOUND
+        redirect_path = PATH_ERROR + '?error=' + GETVAR_NO_PATH
         
     return redirect_path
 
 def save_rtf(db_name, form):
-    redirect_path = apply_rtf(db_name, form)
-    if redirect_path != PATH_NOT_FOUND:
+    (redirect_path, save_error) = apply_rtf(db_name, form, True)
+    if not save_error:
         redirect_path = redirect_path + '?edit=true&message=' + GETVAR_SAVE_SUCCESS
     return redirect_path
 
@@ -210,7 +218,7 @@ def save_update_page(db_name, form):
         else:
             redirect_path = path + '?manage=true&error=' + GETVAR_INVALID_PATH
     else:
-        redirect_path = PATH_NOT_FOUND
+        redirect_path = PATH_ERROR + '?error=' + GETVAR_PAGE_NOT_FOUND
 
     return redirect_path
 
@@ -227,7 +235,7 @@ def toggle_quicklink(db_name, form):
         page = update_page(db_name, page_path, quicklink=quicklink)
         redirect_path = page_path + '?message=' + GETVAR_SAVE_SUCCESS
     except PageNotFoundError:
-        redirect_path = PATH_NOT_FOUND
+        redirect_path = PATH_ERROR + '?error=' + GETVAR_PAGE_NOT_FOUND
 
     return redirect_path
 

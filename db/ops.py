@@ -3,9 +3,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
+from db.exc import DatabaseNotFoundError
 from db.exc import NameUnavailableError, UpdateUnspecifiedError
 from db.exc import PageNotFoundError, PathUnavailableError
-from db.helpers import get_rtf_fullpath
+from db.helpers import get_rtf_fullpath, db_exists
 from db.models import Base, Campaign, Page
 from settings import CAMPAIGN_DB, DB_DIR, DB_PREFIX, PAGE_TABLE_NAME
 from settings import ROOT_DIR, RTF_DIR
@@ -56,6 +57,14 @@ def delete_campaign(id):
 
     session.commit()
     _end_session(engine, session)
+
+def get_db_names():
+    (engine, session) = _start_session(CAMPAIGN_DB)
+
+    db_names = session.query(Campaign.db_name).all()
+
+    _end_session(engine, session)
+    return db_names
 
 def insert_campaign(name, **kwargs):
     (engine, session) = _start_session(CAMPAIGN_DB)
@@ -249,6 +258,9 @@ def query_subpages(db_name, page_path):
 ### Private Methods ###
 
 def _start_session(db_name):
+    if not db_exists(db_name):
+        raise DatabaseNotFoundError(db_name)
+
     db_path = DB_PREFIX + ROOT_DIR + DB_DIR + db_name
     engine = create_engine(db_path)
     Session = sessionmaker(bind=engine)

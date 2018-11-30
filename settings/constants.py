@@ -1,6 +1,10 @@
 # Server
 HOST_NAME = 'localhost'
 PORT_NUMBER = 9000
+LOG_DIR = 'data/log/'
+
+# Image Content Types
+IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif']
 
 # Page paths
 PATH_EXIT = '/exit'
@@ -8,6 +12,7 @@ PATH_HOME = '/wiki'
 PATH_MANAGE = '/manage'
 PATH_NEW = '/new'
 PATH_NOT_FOUND = '/not_found'
+PATH_ERROR = '/error'
 PATH_ROOT = '/'
 
 # Resource query path partials
@@ -22,6 +27,8 @@ GETVAR_INVALID_PATH = 'invalid_path'
 GETVAR_INVALID_NAME = 'invalid_name'
 GETVAR_INVALID_TITLE = 'invalid_title'
 GETVAR_NAME_UNAVAILABLE = 'name_unavailable'
+GETVAR_NO_PATH = 'no_path'
+GETVAR_PAGE_NOT_FOUND = 'page_not_found'
 GETVAR_PATH_UNAVAILABLE = 'path_unavailable'
 GETVAR_SAVE_SUCCESS = 'save_success'
 
@@ -88,12 +95,6 @@ COOKIE_ID = 'CAMPAIGNDEX_ID'
 COOKIE_DB = 'CAMPAIGNDEX_DB'
 COOKIE_NAME = 'CAMPAIGNDEX_NAME'
 COOKIE_SKIN = 'CAMPAIGNDEX_SKIN'
-
-# Skins
-SKIN_CAMPAIGN = 'campaign'
-SKIN_DEFAULT = 'default'
-
-PAGE_SKINS = [SKIN_DEFAULT]
 
 # Quill
 QUILL_JS = 'quill.js'
