@@ -2,4 +2,5 @@ __pycache__
 *.db
 *.delta
 .DS_Store
+*.log
 *.swp
