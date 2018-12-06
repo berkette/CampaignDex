@@ -10,6 +10,7 @@ class CampaignNotFoundError(Exception):
 class DatabaseNotFoundError(Exception):
     def __init__(self, db_name):
         message = 'No database found with name {}'.format(db_name)
+        super().__init__(message)
 
 class InvalidNameError(Exception):
     def __init__(self, name):

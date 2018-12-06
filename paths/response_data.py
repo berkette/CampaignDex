@@ -3,7 +3,7 @@ from mako.template import Template
 from mako.lookup import TemplateLookup
 from db import all_campaigns, query_campaign, query_campaign_by_db_name, get_db_names
 from db import  query_page, query_quicklinks, query_subpages
-from db.exc import PageNotFoundError, DatabaseNotFoundError
+from db.exc import CampaignNotFoundError, PageNotFoundError, DatabaseNotFoundError
 from db.helpers import get_rtf_fullpath
 from db.models import Campaign, Page
 from paths.post_actions import destroy_campaign, open_campaign
@@ -59,7 +59,7 @@ def get_response_data(path, *, cookie=None, get_vars={}):
     # Internal build options
     build_response = True   # Whether the response will be built from a template
     reset_cookies = False   # Whether cookies will be cleared
-    redirect_to_error = False # Whether something bad happened
+    display_error_page = False # Whether something bad happened
 
     try:
         # Cookie values
@@ -72,8 +72,9 @@ def get_response_data(path, *, cookie=None, get_vars={}):
                 cookie_db_val = cookie[COOKIE_DB].value
                 try:
                     campaign = query_campaign_by_db_name(cookie_db_val)
-                except CampaignNotFoundError:
-                    redirect_to_error = True
+                except CampaignNotFoundError as e:
+                    display_error_page = True
+                    error_page_message = str(e)
             else:
                 # There is an invalid db_name stored in a cookie
                 reset_cookies = True    # Probably an out-of-date browser session
@@ -109,13 +110,7 @@ def get_response_data(path, *, cookie=None, get_vars={}):
         wiki_not_found = (path == PATH_NOT_FOUND)
         wiki_op = wiki_new or wiki_error or wiki_not_found
 
-        if redirect_to_error:
-            # Something went wrong. Redirect to an error page
-            status = STATUS_REDIRECT
-            redirect_path = PATH_ERROR
-            # TODO: Add an error message?
-
-        elif cookie_db_val and (wiki or wiki_op):
+        if cookie_db_val and (wiki or wiki_op):
             # Means the user is looking at a specific campaign's pages
             try:
                 page = query_page(cookie_db_val, path)
@@ -303,12 +298,18 @@ def get_response_data(path, *, cookie=None, get_vars={}):
             attributes['message'] = 'Changes successfully saved'
 
     except DatabaseNotFoundError as e:
+        display_error_page = True
+        error_page_message = str(e)
+
+    
+    # If something went wrong, display an "Internal Server Error" page
+    if display_error_page:
         template_name = ERROR_TEMPLATE
+        build_response = True
         attributes = {
-            'error': 'Could not find {}'.format(str(e)),
+            'error': error_page_message,
             'css_filepath': _build_css_path(SKIN_CAMPAIGN)
         }
-
 
     # Build the response content from a template
     if build_response:
