@@ -1,5 +1,6 @@
 import os
 from sqlalchemy import create_engine
+from sqlalchemy import distinct
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
@@ -61,7 +62,7 @@ def delete_campaign(id):
 def get_db_names():
     (engine, session) = _start_session(CAMPAIGN_DB)
 
-    db_names = session.query(Campaign.db_name).all()
+    db_names = [db_name for (db_name,) in session.query(distinct(Campaign.db_name)).all()]
 
     _end_session(engine, session)
     return db_names

@@ -76,7 +76,7 @@ def get_response_data(path, *, cookie=None, get_vars={}):
                     # Campaign id
                     cookie_id_val = cookie[COOKIE_ID].value
                 if COOKIE_NAME in cookie:
-                    # Campaign name
+                    # Campaign name TODO: Remove this!! Spaces break cookies
                     cookie_name_val = cookie[COOKIE_NAME].value
                 if COOKIE_SKIN in cookie:
                     # Campaign's skin
