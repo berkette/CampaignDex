@@ -1,8 +1,8 @@
 import os
 from mako.template import Template
 from mako.lookup import TemplateLookup
-from db import all_campaigns, query_campaign, query_page, get_db_names
-from db import query_quicklinks, query_subpages
+from db import all_campaigns, query_campaign, query_campaign_by_db_name, get_db_names
+from db import  query_page, query_quicklinks, query_subpages
 from db.exc import PageNotFoundError, DatabaseNotFoundError
 from db.helpers import get_rtf_fullpath
 from db.models import Campaign, Page
@@ -35,7 +35,7 @@ from settings import CSS_DIR, JS_DIR, ROOT_DIR, TEMPLATE_DIR, RTF_DIR
 from settings import CSS_SUFFIX, JS_SUFFIX, TEMPLATE_SUFFIX
 from settings import STATUS_OK, STATUS_NOT_FOUND
 from settings import STATUS_REDIRECT, STATUS_SERVER_ERR
-from settings import COOKIE_ID, COOKIE_DB, COOKIE_NAME, COOKIE_SKIN
+from settings import COOKIE_DB
 from settings import SKIN_CAMPAIGN, SKIN_DEFAULT
 from settings import PAGE_SKINS
 from settings import IMAGES_DIR
@@ -59,28 +59,21 @@ def get_response_data(path, *, cookie=None, get_vars={}):
     # Internal build options
     build_response = True   # Whether the response will be built from a template
     reset_cookies = False   # Whether cookies will be cleared
+    redirect_to_error = False # Whether something bad happened
 
     try:
         # Cookie values
-        cookie_id_val = False
-        cookie_name_val = False
         cookie_db_val = False
-        cookie_skin_val = False
 
         if cookie and (COOKIE_DB in cookie):
             # Is it a valid db_name
             if cookie[COOKIE_DB].value in get_db_names():
                 # Campaign's db name
                 cookie_db_val = cookie[COOKIE_DB].value
-                if COOKIE_ID in cookie:
-                    # Campaign id
-                    cookie_id_val = cookie[COOKIE_ID].value
-                if COOKIE_NAME in cookie:
-                    # Campaign name TODO: Remove this!! Spaces break cookies
-                    cookie_name_val = cookie[COOKIE_NAME].value
-                if COOKIE_SKIN in cookie:
-                    # Campaign's skin
-                    cookie_skin_val = cookie[COOKIE_SKIN].value
+                try:
+                    campaign = query_campaign_by_db_name(cookie_db_val)
+                except CampaignNotFoundError:
+                    redirect_to_error = True
             else:
                 # There is an invalid db_name stored in a cookie
                 reset_cookies = True    # Probably an out-of-date browser session
@@ -116,7 +109,13 @@ def get_response_data(path, *, cookie=None, get_vars={}):
         wiki_not_found = (path == PATH_NOT_FOUND)
         wiki_op = wiki_new or wiki_error or wiki_not_found
 
-        if cookie_db_val and (wiki or wiki_op):
+        if redirect_to_error:
+            # Something went wrong. Redirect to an error page
+            status = STATUS_REDIRECT
+            redirect_path = PATH_ERROR
+            # TODO: Add an error message?
+
+        elif cookie_db_val and (wiki or wiki_op):
             # Means the user is looking at a specific campaign's pages
             try:
                 page = query_page(cookie_db_val, path)
@@ -131,12 +130,8 @@ def get_response_data(path, *, cookie=None, get_vars={}):
             template_name = page.template
 
             attributes = {  # attributes that apply to all pages
-                'campaign_name': cookie_name_val,
-                'cookie_id': COOKIE_ID,
-                'cookie_db': COOKIE_DB,
-                'cookie_name': COOKIE_NAME,
-                'cookie_skin': COOKIE_SKIN,
-                'css_filepath': _build_css_path(cookie_skin_val),
+                'campaign_name': campaign.name,
+                'css_filepath': _build_css_path(campaign.skin),
                 'home_path': PATH_HOME,
                 'jquery_js': PATH_JQUERY + JQUERY_JS,
                 'js_common': COMMON_JS + JS_SUFFIX,
@@ -354,18 +349,12 @@ def post_action(path, form, *, cookie=None, get_vars={}):
     elif path == POST_OPEN_CAMPAIGN:
         data = open_campaign(form)
         redirect_path = data['redirect_path']
-        set_cookie.append((COOKIE_ID, data['id']))
         set_cookie.append((COOKIE_DB, data['db']))
-        set_cookie.append((COOKIE_NAME, data['name']))
-        set_cookie.append((COOKIE_SKIN, data['skin']))
             
     elif path == POST_SAVE_CAMPAIGN:
         data = save_new_campaign(form)
         redirect_path = data['redirect_path']
-        set_cookie.append((COOKIE_ID, data['id']))
         set_cookie.append((COOKIE_DB, data['db']))
-        set_cookie.append((COOKIE_NAME, data['name']))
-        set_cookie.append((COOKIE_SKIN, data['skin']))
 
     elif path == POST_UPDATE_CAMPAIGN:
         redirect_path = save_update_campaign(form)
@@ -428,10 +417,7 @@ def _byte_len(str):
     return len(str.encode('utf-8'))
 
 def _clear_cookies(set_cookie):
-    set_cookie.append((COOKIE_ID, ''))
     set_cookie.append((COOKIE_DB, ''))
-    set_cookie.append((COOKIE_NAME, ''))
-    set_cookie.append((COOKIE_SKIN, ''))
     return set_cookie
 
 def _get_file_content(filepath, image=False):

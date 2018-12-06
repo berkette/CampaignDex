@@ -109,6 +109,18 @@ def query_campaign(id):
 
     return campaign
 
+def query_campaign_by_db_name(db_name):
+    (engine, session) = _start_session(CAMPAIGN_DB)
+
+    try:
+        campaign = session.query(Campaign).filter(Campaign.db_name == db_name).one()
+        _end_session(engine, session)
+    except NoResultFound:
+        _end_session(engine, session)
+        raise CampaignNotFoundError(db_name, id_is_db_name=True)
+
+    return campaign
+
 def update_campaign(id, name=None, skin=None):
     # Must specify at least one change
     if not (name or skin):

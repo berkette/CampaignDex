@@ -1,6 +1,10 @@
 class CampaignNotFoundError(Exception):
-    def __init__(self, id):
-        message = 'No campaign was found with id {}'.format(id)
+    def __init__(self, id, id_is_db_name=False):
+        if id_is_db_name:
+            identifier = "db_name"
+        else:
+            identifier = "id"
+        message = 'No campaign was found with {} {}'.format(identifier, id)
         super().__init__(message)
 
 class DatabaseNotFoundError(Exception):
