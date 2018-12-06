@@ -61,11 +61,3 @@ class Page(Base):
         )
         return page
 
-    def page_error(path):
-        page = Page.new(
-            path,
-            title='Internal Server Error',
-            status=STATUS_SERVER_ERR
-        )
-        return page
-
